@@ -26,10 +26,8 @@ from ._gaussian_mixture_model import gauss_model_2save
 class PhaseFirstGaussianModel(GaussianMixtureBase):
     """The class for implementing what we colloquially call the Phase First Gaussian Model.
 
-    Functionality includes:
-        AIC and BIC
-        Spherical, Tied, Diagonal, and Full covariance matrices
-        General or strict fits
+    Functionality includes: AIC or BIC information criteria,
+    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits
 
     version : 0.1
 

@@ -22,10 +22,8 @@ from ._gaussian_mixture_model import gauss_model_2save
 class BayesianGaussianMixture(GaussianMixtureBase):
     """The class for implementing what we colloquially call the 'BGM' algorithms.
 
-    Functionality includes:
-        Cartesian or Polar Coordinates
-        Spherical, Tied, Diagonal, and Full covariance matrices
-        General or strict fits
+    Functionality includes: Cartesian or Polar Coordinates,
+    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits
 
     version : 0.1
 

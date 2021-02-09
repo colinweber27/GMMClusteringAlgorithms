@@ -233,11 +233,8 @@ def gauss_model_2save(x_min, x_max, data, num_bin, *args):
 class GaussianMixtureModel(GaussianMixtureBase):
     """The class for implementing what we colloquially call the 'GMM' algorithms.
 
-    Functionality includes:
-        AIC and BIC
-        Cartesian or Polar Coordinates
-        Spherical, Tied, Diagonal, and Full covariance matrices
-        General or strict fits
+    Functionality includes: AIC or BIC information criteria, Cartesian or Polar Coordinates,
+    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits
 
     version : 0.1
 
