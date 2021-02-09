@@ -1,0 +1,24 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "scikit-learn",
+    "abc",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "scipy",
+    "lmfit",
+    "multiprocessing",
+    "functools",
+    "joblib",
+    "tqdm",
+    "os",
+    "struct",
+    "time",
+    "warnings",
+    "time",
+    "math"
+]
+
+build-backend = "setuptools.build_meta"
