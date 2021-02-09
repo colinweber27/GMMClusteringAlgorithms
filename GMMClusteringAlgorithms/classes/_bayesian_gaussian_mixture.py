@@ -10,7 +10,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
-from GMMClusteringAlgorithms.classes._base import GaussianMixtureBase
+from ._base import GaussianMixtureBase
 from sklearn.mixture import BayesianGaussianMixture as BGM
 from ..sklearn_mixture_piicr import StrictBayesianGaussianMixture
 from ._data_frame import num_bins
