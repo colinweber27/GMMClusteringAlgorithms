@@ -131,6 +131,20 @@ class BayesianGaussianMixture(GaussianMixtureBase):
 
     n_comps_found_ : int, defaults to n_components
         The number of components found by the fit.
+        
+        centers_array_ : array-like, shape (n_components, 9)
+        An array containing the centers of each component and 
+        their uncertainties in each of the 4 coordinate dimensions,
+        as well as the cluster uncertainty.
+        
+    ips_ : array-like, shape (n_components,)
+        The number of ions in each cluster.
+        
+    unique_labels_ : array-like, shape (n_components,)
+        The labels used in the clustering fit.
+        
+    colors_ : list, len = n_components
+        A list of the colors of each cluster.
     """
 
     def __init__(self, n_components=1, *, cov_type='full', tol=1e-5,
@@ -456,7 +470,6 @@ class BayesianGaussianMixture(GaussianMixtureBase):
         c2_sigma_err, c2_height_abs, c2_height_err, c2_fw_hm_abs, \
         c2_fw_hm_err = [], [], [], [], [], [], [], [], [], []
         cluster_err = []
-        ips = []
 
         c1_clusters, c2_clusters = {}, {}  # all c1's and c2's of the ion-hits in each cluster
 
@@ -504,7 +517,6 @@ class BayesianGaussianMixture(GaussianMixtureBase):
                 c2_fw_hm_abs.append(0)
                 c2_fw_hm_err.append(0)
 
-                ips.append(len(c1_cut))
                 cluster_err.append(0)
 
             else:
@@ -578,8 +590,6 @@ class BayesianGaussianMixture(GaussianMixtureBase):
                     cluster_err.append(
                         np.sqrt(c1_fit_array[1] ** 2 +
                                 c2_fit_array[1] ** 2))
-
-                ips.append(len(c1_cut))
 
             plt.title('BGM c1_bins (cadetblue) = %i ; c2_bins '
                       '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
@@ -900,7 +910,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
         n_samples = len(data_array[:, 0])
         center_array = self.centers_array_
 
-        fig = plt.figure(figsize=(9, 9))
+        fig = plt.figure()
         ax = plt.subplot(111, aspect='equal')
         axs = plt.gca()
 

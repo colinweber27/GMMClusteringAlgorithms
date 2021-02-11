@@ -328,7 +328,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         module allows the user to select multiple clusters to merge
         into a single cluster by clicking on them. Once the clusters
         are selected, the fit attributes 'n_comps_found_', 'labels_',
-        'unique_labels_', and 'ips_' are updated. The process
+        'unique_labels_', 'colors_', and 'ips_' are updated. The process
         repeats until all spots have been addressed. Before closing,
         it creates a final matplotlib figure of the results and returns
         it along with a save_string.
@@ -354,6 +354,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                                       "data before visualization.")
 
         fig, save_string = self.show_results(data_frame_object=data_frame_object)
+        
         canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
         canvas.draw()  # Draw the canvas and cache the renderer
         ncols, nrows = fig.canvas.get_width_height()
@@ -380,26 +381,40 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                       "the first spot and look for the next prompt.")
                 root.mainloop()  # Run GUI
 
+                colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
+                          'cyan', 'indianred', 'chartreuse', 'seagreen',
+                          'darkorange', 'purple', 'aliceblue', 'olivedrab',
+                          'deeppink', 'tan', 'rosybrown', 'khaki',
+                          'aquamarine', 'cornflowerblue', 'saddlebrown',
+                          'lightgray']
+
                 # Find indexes of colors
-                index_list = []
+                true_index_list = []
+                cluster_index_list = []
                 for color in color_list:
-                    index_list.append(color_list.index(color))
-                clusters_lost = len(index_list) - 1
-                index_to_keep = min(index_list)
-                other_indices = index_list
-                other_indices.remove(index_to_keep)
+                    true_index_list.append(self.colors_.index(color))
+                    cluster_index_list.append(colors.index(color))
+                clusters_lost = len(true_index_list) - 1
+                true_index_keep = self.ips_.tolist().index(max(self.ips_[true_index_list]))
+                cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
+                other_true_indices = [i for i in true_index_list if i != true_index_keep]
+                other_true_indices.sort(reverse=True)
+                other_cluster_indices = [i for i in cluster_index_list if i != cluster_index_keep]
+                other_cluster_indices.sort(reverse=True)
 
                 # Adjust fit results accordingly
-                self.n_comps_found_ -= clusters_lost
-                for i in other_indices:
-                    self.labels_ = np.where(self.labels_ == i, index_to_keep, self.labels_)
+                self.n_comps_found_ -= len(other_true_indices)
+                for i in other_true_indices:
+                    self.colors_.remove(self.colors_[i])
+                for i in other_cluster_indices:
+                    self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
                 self.unique_labels_ = np.unique(self.labels_)
-                labels_list = list(self.labels_)
+                labels_list = self.labels_.tolist()
                 ips = []
                 for n in self.unique_labels_:
                     cluster_ions = labels_list.count(n)
                     ips.append(cluster_ions)
-                self.ips_ = np.array(ips).reshape(-1, 1)
+                self.ips_ = np.array(ips)
 
                 # Recalculate centers
                 self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
@@ -432,6 +447,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                 PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
 
                 color_list = []  # Initialize cluster list
+
+        fig, save_string = self.show_results(data_frame_object=data_frame_object)
 
         return fig, save_string
 
