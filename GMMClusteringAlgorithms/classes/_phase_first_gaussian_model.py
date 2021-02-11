@@ -311,6 +311,10 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
             information that is used by the algorithms to do the
             fits.
         """
+        if not self.clustered_:
+            raise NotImplementedError("Must run a method to cluster the "
+                                      "data before recalculating centers.")
+
         if not data_frame_object.phase_shifted_:
             shift_phase_dimension(data_frame_object)
 
@@ -636,7 +640,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Given a data frame object that has already been used
         to generate histograms for each dimension of data, this
-        method will graph a GMM fit over each dimension.
+        method will graph a GMM fit over each dimension. The
+        returned matplotlib.plyplot figure can be shown and saved
+        separately.
 
         Parameters
         ----------
@@ -696,6 +702,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     def plot_pdf_surface(self, data_frame_object):
         """Plot the pdf of the Gaussian mixture on a surface.
 
+        The returned matplotlib.plyplot figure can be shown and saved
+        separately.
+
         Parameters
         ----------
         data_frame_object : object from the class DataFrame
@@ -713,8 +722,8 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
             which is done separately.
         """
         if not self.clustered_:
-            print("Must cluster data before visualizing it.")
-            exit()
+            raise NotImplementedError("Must run a method to cluster the "
+                                      "data before visualization.")
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
@@ -792,6 +801,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     def show_results(self, data_frame_object):
         """Display the clustering results.
 
+        The returned matplotlib.plyplot figure can be shown and saved
+        separately.
+
         This method was written by Dwaipayan Ray and Adrian Valverde.
 
         Parameters
@@ -810,6 +822,10 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
             The recommended file name to use when saving the plot,
             which is done separately.
         """
+        if not self.clustered_:
+            raise NotImplementedError("Must run a method to cluster the "
+                                      "data before visualization.")
+
         data_array = data_frame_object.data_array_
         n_samples = len(data_array[:, 0])
         center_array = self.centers_array_

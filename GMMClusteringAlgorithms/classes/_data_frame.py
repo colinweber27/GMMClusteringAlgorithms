@@ -489,7 +489,7 @@ class DataFrame:
 
         return lmf_start_time_int, lmf_stop_time_int
 
-    def return_processed_data(self):
+    def return_processed_data_Excel(self):
         """Return the processed data as an Excel file.
 
         The returned writer will have to be saved separately with the
@@ -597,7 +597,8 @@ class DataFrame:
 
         Each axis of the plot contains the histogram for one
         dimension of data. Also returns a string that can be
-        used for saving the plot, which must be done separately.
+        used for saving the plot. The returned matplotlib.plyplot
+        figure can be shown and saved separately.
 
         Returns
 

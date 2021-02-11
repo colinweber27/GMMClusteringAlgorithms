@@ -10,6 +10,13 @@ from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from PIL import Image, ImageTk
+from tkinter import Tk
+
+from ._cluster_merger_gui import ClusterMergerGUI
 
 
 def sig_fig_rounder(data: list, unc: list):
@@ -150,9 +157,12 @@ class GaussianMixtureBase(metaclass=ABCMeta):
     @abstractmethod
     def fit_over_one_dimensional_histograms(self, fig, axs,
                                             data_frame_object):
-        """Given a data frame object that has already been used
+        """Fit over the histograms generated with the data frame object.
+
+        Given a data frame object that has already been used
         to generate histograms for each dimension of data, this
-        method will graph a GMM fit over each dimension.
+        method will graph a GMM fit over each dimension. The returned
+        matplotlib.plyplot figure can be shown and saved separately.
 
         Parameters
         ----------
@@ -166,16 +176,21 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
+
+        Returns
+        -------
+        fig : matplotlib.pyplot figure
+            The overarching figure object.
         """
         pass
 
     @abstractmethod
     def cluster_data(self, data_frame_object):
-        """Cluster the data.
+        """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
 
-        Assigns the mixture object the attributes 'means_',
+        Assigns the object the attributes 'means_',
         'covariances_', 'weights_', 'labels_', 'responsibilities_',
-        and 'n_comps_found'.
+        and 'n_comps_found_'.
 
         Parameters
         ----------
@@ -188,8 +203,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
     @abstractmethod
     def cluster_data_strict(self, data_frame_object):
-        """Cluster the data, but restricts n_components to the value
-        of the parameter 'n_components'.
+        """Cluster the data, but restrict n_components to the value of the parameter 'n_components'.
 
         Assigns the mixture object the attributes 'means_',
         'covariances_', 'weights_', 'labels_', 'responsibilities_',
@@ -198,20 +212,19 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         Parameters
         ----------
         data_frame_object : object from the class DataFrame
-            The object that contains the processed data and
-            information that is used by the algorithms to do the
-            fits.
+                The object that contains the processed data and
+                information that is used by the algorithms to do the
+                fits.
         """
         pass
 
     @abstractmethod
     def _cluster_data_one_d(self, x):
-        """Cluster the data, which in this case must have only 1
-        dimension.
+        """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
 
-        Assigns the mixture object the attributes 'means_',
+        Assigns the object the attributes 'means_',
         'covariances_', 'weights_', 'labels_', 'responsibilities_',
-        and 'n_comps_found'.
+        and 'n_comps_found_'.
 
         Parameters
         ----------
@@ -222,10 +235,10 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
     @abstractmethod
     def _calculate_centers_uncertainties(self, data_frame_object):
-        """After clustering the data, organize and return the
-         centers and uncertainties in the centers of each cluster.
-         This is done to facilitate plotting the results and
-         exporting them to an Excel data frame.
+        """After clustering the data, organize the cluster centers into a more accessible format.
+
+        Assigns the attributes 'centers_array_', 'ips_',
+        'unique_labels', and 'colors_'.
 
         Parameters
         ----------
@@ -238,13 +251,14 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
     @abstractmethod
     def recalculate_centers_uncertainties(self, data_frame_object):
-        """A method that recalculates the centers of each cluster
-        and the uncertainties in the centers.
+        """Recalculate the centers of each cluster and the uncertainties in the centers.
 
-        It is a different method from simply extracting the centers
-        and uncertainties from the fit. Instead, it does a Gaussian
-        fit to each dimension of each cluster and uses the
+        This uses a different method from simply extracting the centers
+        and uncertainties from the fit. Instead, it fits a univariate Gaussian
+        curve to each dimension of each cluster and uses the
         statistics from the fits to calculate the centers.
+
+        This method was written by Dwaipayan Ray and Adrian Valverde.
 
         Parameters
         ----------
@@ -258,6 +272,9 @@ class GaussianMixtureBase(metaclass=ABCMeta):
     @abstractmethod
     def plot_pdf_surface(self, data_frame_object):
         """Plot the pdf of the Gaussian mixture on a surface.
+
+        The returned matplotlib.plyplot figure can be shown and saved
+        separately.
 
         Parameters
         ----------
@@ -279,7 +296,12 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
     @abstractmethod
     def show_results(self, data_frame_object):
-        """Display the clustering results.
+        """Return the clustering results.
+
+        The returned matplotlib.plyplot figure can be shown and saved
+        separately.
+
+        This method was written by Dwaipayan Ray and Adrian Valverde.
 
         Parameters
         ----------
@@ -299,6 +321,120 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         """
         pass
 
+    def cluster_merger(self, data_frame_object):
+        """Merge clusters into one spot in the case of an over-fitting error.
+
+        After showing the initial results of a clustering fit, this
+        module allows the user to select multiple clusters to merge
+        into a single cluster by clicking on them. Once the clusters
+        are selected, the fit attributes 'n_comps_found_', 'labels_',
+        'unique_labels_', and 'ips_' are updated. The process
+        repeats until all spots have been addressed. Before closing,
+        it creates a final matplotlib figure of the results and returns
+        it along with a save_string.
+
+        Parameters
+        ----------
+        data_frame_object : object from the class DataFrame
+            The object that contains the processed data and
+            information that is used by the algorithms to do the
+            fits.
+
+        Returns
+        -------
+        fig : matplotlib figure object
+            Contains the clustered results.
+
+        save_string : str
+            The recommended file name to use when saving the plot,
+            which is done separately.
+        """
+        if not self.clustered_:
+            raise NotImplementedError("Must run a method to cluster the "
+                                      "data before visualization.")
+
+        fig, save_string = self.show_results(data_frame_object=data_frame_object)
+        canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
+        canvas.draw()  # Draw the canvas and cache the renderer
+        ncols, nrows = fig.canvas.get_width_height()
+        np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
+        # Convert figure to np_array, which is also an OpenCV image
+        PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
+
+        color_list = []  # Initialize cluster list
+
+        done = False
+
+        while not done:
+            print("Look at the image and decide if there are any clusters you "
+                  "want to merge. Once decided, close the window.")
+            plt.show()
+            merge = input("Are there clusters you want to merge? [y/n]")
+            if merge == 'y':
+                root = Tk()  # Initialize Tk
+                PIL_Tk_image = ImageTk.PhotoImage(PIL_image)  # Create image that tkinter can use
+                merger = ClusterMergerGUI(root, color_list=color_list, shape=np_image.shape, image=PIL_Tk_image,
+                                          np_image=np_image)  # Initialize GUI
+                print("Click on only the clusters you want to merge into one spot. If there are \n"
+                      "multiple spots you want to do this with, close out the figure after addressing \n"
+                      "the first spot and look for the next prompt.")
+                root.mainloop()  # Run GUI
+
+                # Find indexes of colors
+                index_list = []
+                for color in color_list:
+                    index_list.append(color_list.index(color))
+                clusters_lost = len(index_list) - 1
+                index_to_keep = min(index_list)
+                other_indices = index_list
+                other_indices.remove(index_to_keep)
+
+                # Adjust fit results accordingly
+                self.n_comps_found_ -= clusters_lost
+                for i in other_indices:
+                    self.labels_ = np.where(self.labels_ == i, index_to_keep, self.labels_)
+                self.unique_labels_ = np.unique(self.labels_)
+                labels_list = list(self.labels_)
+                ips = []
+                for n in self.unique_labels_:
+                    cluster_ions = labels_list.count(n)
+                    ips.append(cluster_ions)
+                self.ips_ = np.array(ips).reshape(-1, 1)
+
+                # Recalculate centers
+                self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
+
+                # Generate new figure
+                fig, save_string = self.show_results(data_frame_object=data_frame_object)
+
+                # Prepare environment for GUI
+                canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
+                canvas.draw()  # Draw the canvas and cache the renderer
+                ncols, nrows = fig.canvas.get_width_height()
+                np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
+                # Convert figure to np_array, which is also an OpenCV image
+                PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
+
+                color_list = []  # Initialize cluster list
+            elif merge == 'n':
+                done = True
+            else:
+                print("Invalid response. Please enter either 'y' or 'n'.")
+
+                fig, save_string = self.show_results(data_frame_object=data_frame_object)
+
+                # Prepare environment for GUI
+                canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
+                canvas.draw()  # Draw the canvas and cache the renderer
+                ncols, nrows = fig.canvas.get_width_height()
+                np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
+                # Convert figure to np_array, which is also an OpenCV image
+                PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
+
+                color_list = []  # Initialize cluster list
+
+        return fig, save_string
+
     def export_to_excel(self):
         """Copies the centers, uncertainties, ips, and colors to
         an Excel format on the clipboard.
@@ -306,6 +442,10 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         # Put all the columns of 'self.centers_array' into
         # proper formatting by rounding them according to
         # their uncertainties.
+        if not self.clustered_:
+            raise NotImplementedError("Must run a method to cluster the "
+                                      "data before exporting to Excel.")
+
         rxs, rxs_err = sig_fig_rounder(
             self.centers_array_[:, 0].tolist(),
             self.centers_array_[:, 1].tolist())
