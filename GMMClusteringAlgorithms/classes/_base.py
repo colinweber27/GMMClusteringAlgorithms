@@ -413,47 +413,51 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                       "multiple spots you want to do this with, close out the figure after addressing \n"
                       "the first spot and look for the next prompt.")
                 root.mainloop()  # Run GUI
+                
+                if len(color_list) > 1:
+                    colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
+                              'cyan', 'indianred', 'chartreuse', 'seagreen',
+                              'darkorange', 'purple', 'aliceblue', 'olivedrab',
+                              'deeppink', 'tan', 'rosybrown', 'khaki',
+                              'aquamarine', 'cornflowerblue', 'saddlebrown',
+                              'lightgray']
 
-                colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
-                          'cyan', 'indianred', 'chartreuse', 'seagreen',
-                          'darkorange', 'purple', 'aliceblue', 'olivedrab',
-                          'deeppink', 'tan', 'rosybrown', 'khaki',
-                          'aquamarine', 'cornflowerblue', 'saddlebrown',
-                          'lightgray']
+                    # Find indexes of colors
+                    true_index_list = []  # Corresponds to the indices of the clusters in centers_array
+                    cluster_index_list = []  # Corresponds to the indices of the clusters relative to labels_ and colors
+                    for color in color_list:
+                        true_index_list.append(self.colors_.index(color))
+                        cluster_index_list.append(colors.index(color))
+                    ips_list = list(self.ips_)
+                    true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
+                    cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
+                    other_true_indices = [i for i in true_index_list if i != true_index_keep]
+                    other_true_indices.sort(reverse=True)
+                    other_cluster_indices = [i for i in cluster_index_list if i != cluster_index_keep]
+                    other_cluster_indices.sort(reverse=True)
 
-                # Find indexes of colors
-                true_index_list = []  # Corresponds to the indices of the clusters in centers_array
-                cluster_index_list = []  # Corresponds to the indices of the clusters relative to labels_ and colors
-                for color in color_list:
-                    true_index_list.append(self.colors_.index(color))
-                    cluster_index_list.append(colors.index(color))
-                ips_list = list(self.ips_)
-                true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
-                cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
-                other_true_indices = [i for i in true_index_list if i != true_index_keep]
-                other_true_indices.sort(reverse=True)
-                other_cluster_indices = [i for i in cluster_index_list if i != cluster_index_keep]
-                other_cluster_indices.sort(reverse=True)
+                    # Adjust fit results accordingly
+                    self.n_comps_found_ -= len(other_true_indices)
+                    for i in other_true_indices:
+                        self.colors_.remove(self.colors_[i])
+                    for i in other_cluster_indices:
+                        self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
+                    self.unique_labels_ = np.unique(self.labels_)
+                    labels_list = list(self.labels_)
+                    ips = []
+                    for n in self.unique_labels_:
+                        cluster_ions = labels_list.count(n)
+                        ips.append(cluster_ions)
+                    self.ips_ = np.array(ips)
 
-                # Adjust fit results accordingly
-                self.n_comps_found_ -= len(other_true_indices)
-                for i in other_true_indices:
-                    self.colors_.remove(self.colors_[i])
-                for i in other_cluster_indices:
-                    self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
-                self.unique_labels_ = np.unique(self.labels_)
-                labels_list = list(self.labels_)
-                ips = []
-                for n in self.unique_labels_:
-                    cluster_ions = labels_list.count(n)
-                    ips.append(cluster_ions)
-                self.ips_ = np.array(ips)
+                    # Recalculate centers
+                    self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
 
-                # Recalculate centers
-                self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
-
-                if self.n_comps_found_ == 1:
-                    break
+                    if self.n_comps_found_ == 1:
+                        break
+                else:
+                    print("Please select at least 2 clusters. If there are no more merges you want "
+                          "to perform, enter 'n' when prompted.")
 
                 # Generate new figure
                 fig, save_string = self.show_results(data_frame_object=data_frame_object)
