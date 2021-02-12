@@ -36,7 +36,7 @@ setuptools.setup(
         'lmfit',
         'joblib',
         'tqdm',
-        'PIL',
+        'pillow',
         'webcolors'
     ],
     keywords=[

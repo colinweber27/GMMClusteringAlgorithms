@@ -63,7 +63,7 @@ GMMClusteringAlgorithms requires:
 * lmfit (>=1.0.0)
 * joblib (>=1.0.0)
 * tqdm (>=4.56.0)
-* PIL (>=8.1.0)
+* pillow (>=8.1.0)
 * webcolors(>=1.11.1)
 
 #### User Installation
