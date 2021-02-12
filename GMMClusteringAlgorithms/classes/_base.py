@@ -303,7 +303,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def plot_pdf_surface(self, data_frame_object):
+    def get_pdf_fig(self, data_frame_object):
         """Plot the pdf of the Gaussian mixture on a surface.
 
         The returned matplotlib.plyplot figure can be shown and saved
@@ -328,7 +328,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def show_results(self, data_frame_object):
+    def get_results_fig(self, data_frame_object):
         """Return the clustering results.
 
         The returned matplotlib.plyplot figure may be shown
@@ -386,7 +386,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             raise NotImplementedError("Must run a method to cluster the "
                                       "data before visualization.")
 
-        fig, save_string = self.show_results(data_frame_object=data_frame_object)
+        fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
         
         canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
         canvas.draw()  # Draw the canvas and cache the renderer
@@ -460,7 +460,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                           "to perform, enter 'n' when prompted.")
 
                 # Generate new figure
-                fig, save_string = self.show_results(data_frame_object=data_frame_object)
+                fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
 
                 # Prepare environment for GUI
                 canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
@@ -476,7 +476,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             else:
                 print("Invalid response. Please enter either 'y' or 'n'.")
 
-                fig, save_string = self.show_results(data_frame_object=data_frame_object)
+                fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
 
                 # Prepare environment for GUI
                 canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
@@ -488,11 +488,11 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
                 color_list = []  # Initialize cluster list
 
-        fig, save_string = self.show_results(data_frame_object=data_frame_object)
+        fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
 
         return fig, save_string
 
-    def export_to_excel(self):
+    def export_to_clipboard(self):
         """Copies the centers, uncertainties, ips, and colors to
         an Excel format on the clipboard.
         """

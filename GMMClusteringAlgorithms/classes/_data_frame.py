@@ -612,7 +612,7 @@ class DataFrame:
                   min(self.data_array_[:, i]) for
                   i in range(0, np.shape(self.data_array_)[1])]
 
-        fig, axs = plt.subplots(2, 2, sharey='all') # Initialize figure
+        fig, axs = plt.subplots(2, 2, sharey='all')  # Initialize figure
 
         # For each data dimension except phase, plot a histogram
         # Do this by converting each of the four dimensions to base 2

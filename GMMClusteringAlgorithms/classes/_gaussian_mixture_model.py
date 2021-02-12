@@ -947,7 +947,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig
 
-    def plot_pdf_surface(self, data_frame_object):
+    def get_pdf_fig(self, data_frame_object):
         """Plot the pdf of the Gaussian mixture on a surface.
 
         The returned matplotlib.plyplot figure can be shown and saved
@@ -1062,7 +1062,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig, save_string
 
-    def show_results(self, data_frame_object):
+    def get_results_fig(self, data_frame_object):
         """Return the clustering results.
 
         The returned matplotlib.plyplot figure may be shown
