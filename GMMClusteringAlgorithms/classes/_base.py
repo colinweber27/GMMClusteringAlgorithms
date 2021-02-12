@@ -452,6 +452,9 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                 # Recalculate centers
                 self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
 
+                if self.n_comps_found_ == 1:
+                    break
+
                 # Generate new figure
                 fig, save_string = self.show_results(data_frame_object=data_frame_object)
 
