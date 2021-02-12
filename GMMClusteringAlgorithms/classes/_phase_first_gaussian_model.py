@@ -10,15 +10,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
-from ._base import GaussianMixtureBase
-from sklearn.mixture import GaussianMixture as GM
-from ..sklearn_mixture_piicr import PhaseConstrainedGaussianMixture
-from ._data_frame import num_bins
-from ._data_frame import shift_phase_dimension
 import multiprocessing
+
+from sklearn.mixture import GaussianMixture as GM
 from functools import partial
 from joblib import Parallel, delayed
 from tqdm import tqdm
+
+from ..sklearn_mixture_piicr import PhaseConstrainedGaussianMixture
+from ._data_frame import num_bins
+from ._data_frame import shift_phase_dimension
+from ._base import GaussianMixtureBase
 from ._gaussian_mixture_model import wt_avg_unc_number
 from ._gaussian_mixture_model import gauss_model_2save
 
@@ -27,7 +29,8 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     """The class for implementing what we colloquially call the Phase First Gaussian Model.
 
     Functionality includes: AIC or BIC information criteria,
-    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits
+    Spherical, Tied, Diagonal, or Full covariance matrices,
+    and general or strict fits
 
     version : 0.1
 
@@ -42,65 +45,51 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     cov_type : {'full' (default), 'tied', 'diag', 'spherical'}
         String describing the type of covariance parameters to use.
         Must be one of:
-
-        'full'
-            each component has its own general covariance matrix
-        'tied'
-            all components share the same general covariance matrix
-        'diag'
-            each component has its own diagonal covariance matrix
-        'spherical'
-            each component has its own single variance
-
+            'full'
+                each component has its own general covariance matrix
+            'tied'
+                all components share the same general covariance matrix
+            'diag'
+                each component has its own diagonal covariance matrix
+            'spherical'
+                each component has its own single variance
         Taken from the sklearn package.
 
     tol : float, defaults to 1e-5
         The convergence threshold. EM iterations will stop when the
-        lower bound average gain is below this threshold.
-
-        Taken from the sklearn package.
+        lower bound average gain is below this threshold. Taken from
+        the sklearn package.
 
     max_iter : int, defaults to 500.
-        The number of EM iterations to perform.
-
-        Taken from the sklearn package.
+        The number of EM iterations to perform. Taken from the sklearn package.
 
     n_init : int, defaults to 30.
         The number of initializations to perform. The best results
-        are kept.
-
-        Taken from the sklearn package.
+        are kept. Taken from the sklearn package.
 
     ic : {'BIC', 'AIC', 'None'}, defaults to 'BIC'
         The information criterion used to select the number of
-        components.
-        Must be one of:
-
-            'None' (corresponding to a 'strict' fit)
+        components. Must be one of:
+            'None' : (corresponding to a 'strict' fit)
             'AIC' : The Akaike Information Criterion
             'BIC' : The Bayesian Information Criterion
 
     Attributes
     ----------
     weights_ : array-like, shape (n_components,)
-        The weights of each mixture components.
-
-        Taken from the sklearn package.
+        The weights of each mixture components. Taken from
+        the sklearn package.
 
     means_ : array-like, shape (n_components, n_features)
-        The mean of each mixture component.
-
-        Taken from the sklearn package.
+        The mean of each mixture component. Taken from the sklearn package.
 
     covariances_ : array-like
         The covariance of each mixture component.
-        The shape depends on `covariance_type`::
-
+        The shape depends on `covariance_type`:
             (n_components,)                        if 'spherical',
             (n_features, n_features)               if 'tied',
             (n_components, n_features)             if 'diag',
             (n_components, n_features, n_features) if 'full'
-
         Taken from the sklearn package.
 
     labels_ : array-like, shape (n_samples,)
@@ -118,7 +107,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     n_comps_found_ : int, defaults to n_components
         The number of components found by the fit.
 
-        centers_array_ : array-like, shape (n_components, 9)
+    centers_array_ : array-like, shape (n_components, 9)
         An array containing the centers of each component and
         their uncertainties in each of the 4 coordinate dimensions,
         as well as the cluster uncertainty.
@@ -165,6 +154,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         """Fit a Gaussian Mixture Model to the data given by x.
 
         Parameters
+        ----------
         x : array-like, shape (n_samples, n_attributes)
             The data to be fit.
 
@@ -176,6 +166,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         Returns
         -------
         model : GaussianMixture from the sklearn package
+            The GaussianMixture object that has been fit to the data.
         """
         model = GM(n_components=n_components, tol=self.tol,
                    max_iter=self.max_iter, n_init=self.n_init,
@@ -191,26 +182,23 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         for the fit.
 
         Standard Errors are calculated with typical standard error propagation methods.
+        Initialize the attribute 'centers_array_'.
 
         Parameters
         ----------
         c1s : array-like, shape (n_components,)
-            The x-coordinates of the cluster centers if clustering
-            with Cartesian coordinates, otherwise the r-coordinates
-            of the cluster centers.
+            The r-coordinates of the cluster centers.
 
         c1s_err : array-like, shape (n_components,)
             The standard error in the c1s.
 
         c2s : array-like, shape (n_components,)
-            The y-coordinates of the cluster centers if clustering
-            with Cartesian coordinates, otherwise the p-coordinates
-            of the cluster centers.
+            The p-coordinates of the cluster centers.
 
         c2s_err : array-like, shape (n_components,)
             The standard error in the c2s.
 
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -218,6 +206,8 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         xC, yC = data_frame_object.center
         xC_unc, yC_unc = data_frame_object.center_unc
 
+        # Calculate the x- and y- coordinates of the cluster centers, with standard errors.
+        # First, ensure data is not phase shifted.
         if data_frame_object.phase_shifted_:
             shift = data_frame_object.phase_shift_
 
@@ -231,18 +221,19 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
             data_frame_object.phase_shifted_ = False
 
+        # Convert data from degrees to radians
         phases = np.deg2rad(c2s)
         phases_err = np.deg2rad(c2s_err)
 
         xs = np.add(np.multiply(c1s, np.cos(phases)), xC)
         xs_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.cos(
             phases), c1s_err)), np.square(np.multiply(
-            np.multiply(c1s, np.sin(phases)), phases_err))),
+                np.multiply(c1s, np.sin(phases)), phases_err))),
             xC_unc ** 2))
         ys = np.add(np.multiply(c1s, np.sin(phases)), yC)
         ys_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.sin(
             phases), c1s_err)), np.square(np.multiply(
-            np.multiply(c1s, np.cos(phases)), phases_err))),
+                np.multiply(c1s, np.cos(phases)), phases_err))),
             yC_unc ** 2))
         cluster_err = np.sqrt(np.add(np.square(xs_err),
                                      np.square(ys_err)))
@@ -259,7 +250,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -306,21 +297,22 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                   'aquamarine', 'cornflowerblue', 'saddlebrown',
                   'lightgray']
 
-        self.colors_ = colors[0:self.n_comps_found_]
+        self.colors_ = []
+        for i in self.unique_labels_:
+            self.colors_.append(colors[i])
 
     def recalculate_centers_uncertainties(self, data_frame_object):
         """Recalculate the centers of each cluster and the uncertainties in the centers.
 
         This uses a different method from simply extracting the centers
         and uncertainties from the fit. Instead, it fits a univariate Gaussian
-        curve to each dimension of each cluster and uses the
-        statistics from the fits to calculate the centers.
-
-        This method was written by Dwaipayan Ray and Adrian Valverde.
+        to each dimension of each cluster and uses the statistics from the
+        fits to calculate the centers. This method was written by Dwaipayan
+        Ray and Adrian Valverde.
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -334,49 +326,15 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         cp = data_frame_object.data_array_
 
-        c1_stuff, c2_stuff = {}, {}  # c1-s and c2-s of the spots in
-        # each cluster, dictionary index as the cluster number
-        ions_psp_dict = {}  # ions per spot (psp), dictionary
-        # index as the cluster number
-        rel_popu_psp_dict = {}  # relative population per spot
-        # (psp), dictionary index as the cluster number
-        ions_psp = []  # ions per spot (psp)
-        rel_popu_psp = []  # relative population per spot (psp)
-
-        cluster_ind = np.arange(0, self.n_comps_found_)  # array of
-        # cluster numbers
-        for i in cluster_ind:
-            c1_stuff['%i' % i] = cp[self.labels_ ==
-                                    self.unique_labels_[i]][:, 2]
-            c2_stuff['%i' % i] = cp[self.labels_ ==
-                                    self.unique_labels_[i]][:, 3]
-            '''
-            labels == i generates an array of just True (when 
-            labels values == i) and False (when labels values != i)
-            cp[labels == i] selects only those values from cp when 
-            the "labels==i" array has True value
-            cp[labels == i][:,0 or 1] selects the c1's or c2's from 
-            the cp[labels == i] array
-            '''
-            ions_psp_dict['%i' % i] = len(c1_stuff['%i' % i])
-            rel_popu_psp_dict['%i' % i] = 1.0 * len(
-                c1_stuff['%i' % i]) / len(cp[:, 0])
-
-            ions_psp.append(len(c1_stuff['%i' % i]))
-            # ions per spot
-            rel_popu_psp.append(1.0 * len(c1_stuff['%i' % i]) /
-                                len(cp[:, 0]))
+        cluster_ind = np.arange(0, self.n_comps_found_)  # array of cluster numbers
 
         c1s, c1s_err, c1_chi_sq, c1_red_chi_sq, c1_sigma_abs, \
-        c1_sigma_err, c1_height_abs, c1_height_err, c1_fw_hm_abs, \
-        c1_fw_hm_err = [], [], [], [], [], [], [], [], [], []
+            c1_sigma_err, c1_height_abs, c1_height_err, c1_fw_hm_abs, \
+            c1_fw_hm_err = [], [], [], [], [], [], [], [], [], []
         c2s, c2s_err, c2_chi_sq, c2_red_chi_sq, c2_sigma_abs, \
-        c2_sigma_err, c2_height_abs, c2_height_err, c2_fw_hm_abs, \
-        c2_fw_hm_err = [], [], [], [], [], [], [], [], [], []
+            c2_sigma_err, c2_height_abs, c2_height_err, c2_fw_hm_abs, \
+            c2_fw_hm_err = [], [], [], [], [], [], [], [], [], []
         cluster_err = []
-
-        c1_clusters, c2_clusters = {}, {}  # all c1's and c2's of the
-        # ion-hits in each cluster
 
         for i in cluster_ind:
             plt.figure()
@@ -386,9 +344,6 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                 if self.labels_[j] == self.unique_labels_[i]:
                     c1_cut.append(cp[:, 2][j])
                     c2_cut.append(cp[:, 3][j])
-
-            c1_clusters['%i' % i] = c1_cut
-            c2_clusters['%i' % i] = c2_cut
 
             width_c1 = max(c1_cut) - min(c1_cut)
             width_c2 = max(c2_cut) - min(c2_cut)
@@ -490,13 +445,11 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                         np.sqrt(c1_fit_array[1] ** 2 +
                                 c2_fit_array[1] ** 2))
 
-                ips.append(len(c1_cut))
-
-            plt.title('Phase First GM c1_bins (cadetblue) = %i ; c2_bins '
+            plt.title('Phase First GM %i c1_bins (cadetblue) = %i ; c2_bins '
                       '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
                       'Cluster unc=%0.5f' % (
-                          num_bins(c1_cut), num_bins(c2_cut), c1s[i], c2s[i],
-                          cluster_err[i]))
+                        self.n_comps_found_, num_bins(c1_cut),
+                        num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
             plt.xlim(-10, 10)
             plt.show()
 
@@ -513,18 +466,20 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         Parameters
         ----------
         x : array-like, shape (n_samples, n_attributes)
-            The data to be clustered
+            The data to be clustered.
         """
+        # Initialize multiprocessing variables
         n_cores = multiprocessing.cpu_count()
         test_n_comps = list(range(1, self.n_components + 1))
         inputs = tqdm(test_n_comps)
         ic_list = []
 
         if __name__ == 'gmm_clustering_algorithms.classes._phase_first_gaussian_model':
-            func = partial(self._GMM_fit, x)
-            results = Parallel(n_jobs=n_cores)(delayed(func)(i)
+            func = partial(self._GMM_fit, x)  # Initialize function to be processed
+            results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process results
                                                for i in inputs)
 
+            # Collect IC's
             if self.ic == 'None':
                 raise ValueError(
                     "When using the method 'cluster_data', the "
@@ -540,9 +495,11 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                     bic = r.bic(x)
                     ic_list.append(bic)
 
+            # Find minimum IC and its corresponding model
             best_ic = min(ic_list)
             model = results[ic_list.index(best_ic)]
 
+            # Assign attributes
             self.means_ = model.means_
             self.covariances_ = model.covariances_
             self.weights_ = model.weights_
@@ -559,7 +516,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -568,10 +525,15 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         if not data_frame_object.phase_shifted_:
             shift_phase_dimension(data_frame_object)
+
+        # Collect data from data_frame_object
         phase_data = data_frame_object.data_array_[:, 3].reshape(-1, 1)
         polar_data = data_frame_object.data_array_[:, (2, 3)]
+
+        # Fit model to phase dimension
         self._cluster_data_one_d(phase_data)
 
+        # Assign variables to be input into 2D fit
         labels = self.labels_
         n_components = self.n_comps_found_
         phase_means = self.means_.reshape((-1,))
@@ -587,6 +549,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         model.phase_constrained_fit(polar_data)
 
+        # Assign attributes
         self.means_ = model.means_
         self.covariances_ = model.covariances_
         self.weights_ = model.weights_
@@ -606,21 +569,24 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
-                The object that contains the processed data and
-                information that is used by the algorithms to do the
-                fits.
+        data_frame_object : DataFrame class object
+            The object that contains the processed data and
+            information that is used by the algorithms to do the
+            fits.
         """
         self._check_base_parameters()
 
         if not data_frame_object.phase_shifted_:
             shift_phase_dimension(data_frame_object)
+
+        # Gather data from data_frame_object
         phase_data = data_frame_object.data_array_[:, 3].reshape(-1, 1)
         polar_data = data_frame_object.data_array_[:, (2, 3)]
 
         model = self._GMM_fit(
             phase_data, n_components=self.n_components)
 
+        # Assign input variables for 2D fit
         labels = model.predict(phase_data)
         n_components = self.n_components
         phase_means = model.means_.reshape((-1,))
@@ -636,6 +602,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         model.phase_constrained_fit(polar_data)
 
+        # Assign attributes
         self.means_ = model.means_
         self.covariances_ = model.covariances_
         self.weights_ = model.weights_
@@ -652,9 +619,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Given a data frame object that has already been used
         to generate histograms for each dimension of data, this
-        method will graph a GMM fit over each dimension. The
-        returned matplotlib.plyplot figure can be shown and saved
-        separately.
+        method will graph a GMM fit over each dimension. The returned
+        matplotlib.plyplot figure may be shown with the method plt.show()
+        or saved with the method plt.savefig() separately.
 
         Parameters
         ----------
@@ -664,7 +631,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         axs : matplotlib.pyplot axes
             Contains the four different histograms.
 
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -719,7 +686,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -813,14 +780,14 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
     def show_results(self, data_frame_object):
         """Display the clustering results.
 
-        The returned matplotlib.plyplot figure can be shown and saved
-        separately.
-
-        This method was written by Dwaipayan Ray and Adrian Valverde.
+        The returned matplotlib.plyplot figure may be shown
+        with the method plt.show() or saved with the method
+        plt.savefig() separately. This method was written by
+        Dwaipayan Ray and Adrian Valverde.
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -852,10 +819,10 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         plt.title("Phase First GMM %s total counts: %i; total "
                   "clusters: %i, Cov=%s\n%s\nTOF cut=%s, Ion cut=%s, "
                   "Rad cut=%s, Time cut=%s" % (
-            self.ic, n_samples, self.n_comps_found_, self.cov_type,
-            data_frame_object.file[0:-4], data_frame_object.tof_cut,
-            data_frame_object.ion_cut, data_frame_object.rad_cut,
-            data_frame_object.time_cut))
+                    self.ic, n_samples, self.n_comps_found_, self.cov_type,
+                    data_frame_object.file[0:-4], data_frame_object.tof_cut,
+                    data_frame_object.ion_cut, data_frame_object.rad_cut,
+                    data_frame_object.time_cut))
 
         plt.xlabel('X [mm]', weight='bold')
         plt.ylabel('Y [mm]', weight='bold')
@@ -911,9 +878,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         save_string = 'Phase First GMM %s PDF, %s, %s, %s ' \
                       'Clusters, timecut=%s,radcut=%s,tofcut=%s,' \
                       'ioncut=%s.jpeg' % (
-            self.ic, data_frame_object.file[0:-4], self.cov_type,
-            self.n_comps_found_, data_frame_object.time_cut,
-            data_frame_object.rad_cut, data_frame_object.tof_cut,
-            data_frame_object.ion_cut)
+                        self.ic, data_frame_object.file[0:-4], self.cov_type,
+                        self.n_comps_found_, data_frame_object.time_cut,
+                        data_frame_object.rad_cut, data_frame_object.tof_cut,
+                        data_frame_object.ion_cut)
 
         return fig, save_string

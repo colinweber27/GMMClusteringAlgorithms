@@ -9,24 +9,25 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from ._base import GaussianMixtureBase
-from lmfit.models import GaussianModel
-from sklearn.mixture import GaussianMixture as GM
-from ._data_frame import num_bins
-from ._data_frame import shift_phase_dimension
 import scipy.stats
 import multiprocessing
+
+from lmfit.models import GaussianModel
+from sklearn.mixture import GaussianMixture as GM
 from functools import partial
 from joblib import Parallel, delayed
 from tqdm import tqdm
+
+from ._data_frame import num_bins
+from ._data_frame import shift_phase_dimension
+from ._base import GaussianMixtureBase
 
 
 def wt_avg_unc_number(abs_list: list, unc):
     """Returns a weighted average of the elements in 'abs_list'.
 
-    Weights are given by the parameter 'unc'.
-
-    This method was written by Dwaipayan Ray and Adrian Valverde.
+    Weights are given by the parameter 'unc'. This method was
+    written by Dwaipayan Ray and Adrian Valverde.
 
     Parameters
     ----------
@@ -64,7 +65,6 @@ def gauss_model_2save(x_min, x_max, data, num_bin, *args):
     """Fit the data to a Gaussian model.
 
     Also extract the Gaussian statistics for debugging convenience.
-
     This method was written by Dwaipayan Ray and Adrian Valverde.
 
     Parameters
@@ -131,17 +131,17 @@ def gauss_model_2save(x_min, x_max, data, num_bin, *args):
         data, bins=num_bin, range=(x_min, x_max), weights=None,
         alpha=0.6, color=clr, histtype='stepfilled')
     '''
-    # x_bins[0] : number of objects in the individual bins (in 
-                  statistics jargon, frequency)
-    # x_bins[1] : edge values of the individual bins; 
-                  len = num_bins+1 (num_bins left edges and right 
-                  edge of last bin)
-    # x_bins[2] : Silent list of individual patches used to create 
-                  the histogram or list of such list if multiple 
-                  input datasets.
+    x_bins[0] : number of objects in the individual bins (in 
+                statistics jargon, frequency)
+    x_bins[1] : edge values of the individual bins; 
+                len = num_bins+1 (num_bins left edges and right 
+                edge of last bin)
+    x_bins[2] : Silent list of individual patches used to create 
+                the histogram or list of such list if multiple 
+                input datasets.
 
-    # x_bins[0] >= 3, else:
-        TypeError: Improper input: N=3 must not exceed M=2
+    x_bins[0] >= 3, else:
+      TypeError: Improper input: N=3 must not exceed M=2
     
     From scipy.optimize.curve_fit: M >= N; N variables (fitting 
     parameters), M values (number of data points, i.e. len(x)). 
@@ -153,27 +153,18 @@ def gauss_model_2save(x_min, x_max, data, num_bin, *args):
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
     '''
 
-    x_center = (x_bins[1][:-1] + x_bins[1][1:]) / 2.0
-    # Center of each bin
-    '''This is equivalent to:
-    j = 0
-    while j < len(x_bins[1])-1:
-        centers = (x_bins[1][j]+x_bins[1][j+1])/2.0
-        print("\n",centers)
-        j = j+1
-    '''
+    x_center = (x_bins[1][:-1] + x_bins[1][1:]) / 2.0  # Center of each bin
 
-    # Now do the fitting.
     if len(x_bins[0]) < 5:
         if len(x_bins[0]) < 3:
             print(
-                "\nNumber of bins less than number of parameters (=3) "
+                "Number of bins less than number of parameters (=3) "
                 "for Gaussian fitting.\nHence weighted average method "
                 "used instead.\n")
 
         if len(x_bins[0]) in [3, 4]:
             print(
-                "\nNumber of bins == %i, too few for effective fit to"
+                "Number of bins == %i, too few for effective fit to"
                 "Gaussian curve.\nUse weighted average method instead.\n" % len(x_bins[0]))
 
         weights = []
@@ -219,10 +210,12 @@ def gauss_model_2save(x_min, x_max, data, num_bin, *args):
         height_abs = fit.params['height'].value
         height_err = fit.params['height'].stderr
 
+        # Compute y_fit values from x_fit's
         x_fit = np.arange(x_min, x_max, 0.01)
         y_fit = fit.eval(x=x_fit)
-        # Compute y_fit values from x_fit's
+
         plt.plot(x_fit, y_fit, 'k-')
+
     plt.title('center : %.3f' % center_abs)
     plt.xlim(x_min, x_max)
 
@@ -234,7 +227,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
     """The class for implementing what we colloquially call the 'GMM' algorithms.
 
     Functionality includes: AIC or BIC information criteria, Cartesian or Polar Coordinates,
-    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits
+    Spherical, Tied, Diagonal, or Full covariance matrices, and general or strict fits.
 
     version : 0.1
 
@@ -247,50 +240,37 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
 
     cov_type : {'full' (default), 'tied', 'diag', 'spherical'}
-        String describing the type of covariance parameters to use.
-        Must be one of:
-
-        'full'
-            each component has its own general covariance matrix
-        'tied'
-            all components share the same general covariance matrix
-        'diag'
-            each component has its own diagonal covariance matrix
-        'spherical'
-            each component has its own single variance
-
+        String describing the type of covariance parameters to use. Must be one of:
+            'full'
+                each component has its own general covariance matrix
+            'tied'
+                all components share the same general covariance matrix
+            'diag'
+                each component has its own diagonal covariance matrix
+            'spherical'
+                each component has its own single variance
         Taken from the sklearn package.
 
     tol : float, defaults to 1e-5
         The convergence threshold. EM iterations will stop when the
-        lower bound average gain is below this threshold.
-
-        Taken from the sklearn package.
+        lower bound average gain is below this threshold. Taken from the sklearn package.
 
     max_iter : int, defaults to 500.
-        The number of EM iterations to perform.
-
-        Taken from the sklearn package.
+        The number of EM iterations to perform. Taken from the sklearn package.
 
     n_init : int, defaults to 30.
         The number of initializations to perform. The best results
-        are kept.
-
-        Taken from the sklearn package.
+        are kept. Taken from the sklearn package.
 
     ic : {'BIC', 'AIC', 'None'}, defaults to 'BIC'
         The information criterion used to select the number of
-        components.
-        Must be one of:
-
-            'None' (corresponding to a 'strict' fit)
+        components. Must be one of:
+            'None' : corresponding to a 'strict' fit
             'AIC' : The Akaike Information Criterion
             'BIC' : The Bayesian Information Criterion
 
-    coordinates: {'Cartesian', 'Polar'}, defaults to 'Cartesian'
-        The coordinate system to work in.
-        Must be one of:
-
+    coordinates: {'Cartesian' (default), 'Polar'}
+        The coordinate system to work in. Must be one of:
             'Cartesian'
             'Polar'
 
@@ -308,13 +288,11 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
     covariances_ : array-like
         The covariance of each mixture component.
-        The shape depends on `covariance_type`::
-
+        The shape depends on `covariance_type`:
             (n_components,)                        if 'spherical',
             (n_features, n_features)               if 'tied',
             (n_components, n_features)             if 'diag',
             (n_components, n_features, n_features) if 'full'
-
         Taken from the sklearn package.
 
     labels_ : array-like, shape (n_samples,)
@@ -390,6 +368,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         """The method that fits a Gaussian Mixture Model to the data given by x.
 
         Parameters
+        ----------
         x : array-like, shape (n_samples, n_attributes)
             The data to be fit.
 
@@ -401,6 +380,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         Returns
         -------
         model : GaussianMixture from the sklearn package
+            The GaussianMixture object that has been fit to the data.
         """
         model = GM(n_components=n_components, tol=self.tol,
                    max_iter=self.max_iter, n_init=self.n_init,
@@ -416,6 +396,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         was not used for the fit.
 
         Standard errors are calculated with typical standard error propagation methods.
+        Initialize the attribute 'centers_array_'.
 
         Parameters
         ----------
@@ -435,7 +416,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         c2s_err : array-like, shape (n_components,)
             The standard error in the c2s.
 
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -444,6 +425,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         xC_unc, yC_unc = data_frame_object.center_unc
 
         if self.coordinates == 'Cartesian':
+            # Calculate the radii and phases of cluster centers, with standard errors
             rs = np.sqrt(np.square(np.subtract(c1s, xC)) +
                          np.square(np.subtract(c2s, yC)))
             rs_err = np.sqrt(np.add(np.add(np.multiply(np.square(np.divide(
@@ -463,7 +445,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
                                                            np.subtract(c1s, xC))))),
                 np.divide(np.subtract(yC, c2s), np.square(np.subtract(c1s, xC)))),
                 c1s_err)), np.square(np.multiply(np.multiply(np.divide(1, np.add(
-                1, np.square(np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))),
+                    1, np.square(np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))),
                                                              np.divide(np.subtract(
                                                                  yC, c2s), np.square(
                                                                  np.subtract(c1s, xC)))), xC_unc))), np.add(
@@ -471,9 +453,9 @@ class GaussianMixtureModel(GaussianMixtureBase):
                     np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))),
                                                   np.divide(1, np.subtract(c1s, xC))),
                                       c2s_err)), np.square(np.multiply(np.multiply(
-                    np.divide(1, np.add(1, np.square(np.divide(np.subtract(c2s, yC),
-                                                               np.subtract(c1s, xC))))),
-                    np.divide(1, np.subtract(c1s, xC))), yC_unc))))))
+                                        np.divide(1, np.add(1, np.square(np.divide(np.subtract(c2s, yC),
+                                                                                   np.subtract(c1s, xC))))),
+                                        np.divide(1, np.subtract(c1s, xC))), yC_unc))))))
 
             cluster_err = np.sqrt(np.add(np.square(c1s_err),
                                          np.square(c2s_err)))
@@ -484,6 +466,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
                                              cluster_err)).T
 
         else:  # if self.coordinates == 'Polar':
+            # Calculate the x- and y- coordinates of the cluster centers, with standard errors.
+            # First, ensure data is not phase shifted.
             if data_frame_object.phase_shifted_:
                 shift = data_frame_object.phase_shift_
 
@@ -500,18 +484,19 @@ class GaussianMixtureModel(GaussianMixtureBase):
                 data_frame_object.data_array_[:, 3] = p_raw
                 data_frame_object.phase_shifted_ = False
 
+            # Convert to radians
             phases = np.deg2rad(c2s)
             phases_err = np.deg2rad(c2s_err)
 
             xs = np.add(np.multiply(c1s, np.cos(phases)), xC)
             xs_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.cos(
                 phases), c1s_err)), np.square(np.multiply(
-                np.multiply(c1s, np.sin(phases)), phases_err))),
+                    np.multiply(c1s, np.sin(phases)), phases_err))),
                 xC_unc ** 2))
             ys = np.add(np.multiply(c1s, np.sin(phases)), yC)
             ys_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.sin(
                 phases), c1s_err)), np.square(np.multiply(
-                np.multiply(c1s, np.cos(phases)), phases_err))),
+                    np.multiply(c1s, np.cos(phases)), phases_err))),
                 yC_unc ** 2))
             cluster_err = np.sqrt(np.add(np.square(xs_err),
                                          np.square(ys_err)))
@@ -528,7 +513,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -583,14 +568,13 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         This uses a different method from simply extracting the centers
         and uncertainties from the fit. Instead, it fits a univariate Gaussian
-        curve to each dimension of each cluster and uses the
-        statistics from the fits to calculate the centers.
-
-        This method was written by Dwaipayan Ray and Adrian Valverde.
+        to each dimension of each cluster and uses the statistics from the
+        fits to calculate the centers. This method was written by Dwaipayan
+        Ray and Adrian Valverde..
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -604,55 +588,15 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         cp = data_frame_object.data_array_
 
-        c1_stuff, c2_stuff = {}, {}  # c1-s and c2-s of the spots in
-        # each cluster, dictionary index as the cluster number
-        ions_psp_dict = {}  # ions per spot (psp), dictionary
-        # index as the cluster number
-        rel_popu_psp_dict = {}  # relative population per spot
-        # (psp), dictionary index as the cluster number
-        ions_psp = []  # ions per spot (psp)
-        rel_popu_psp = []  # relative population per spot (psp)
-
-        cluster_ind = np.arange(0, self.n_comps_found_)  # array of
-        # cluster numbers
-        for i in cluster_ind:
-            if self.coordinates == 'Cartesian':
-                c1_stuff['%i' % i] = cp[self.labels_ ==
-                                        self.unique_labels_[i]][:, 0]
-                c2_stuff['%i' % i] = cp[self.labels_ ==
-                                        self.unique_labels_[i]][:, 1]
-            else:  # if self.coordinates == 'Polar':
-                c1_stuff['%i' % i] = cp[self.labels_ ==
-                                        self.unique_labels_[i]][:, 2]
-                c2_stuff['%i' % i] = cp[self.labels_ ==
-                                        self.unique_labels_[i]][:, 3]
-            '''
-            labels == i generates an array of just True (when 
-            labels values == i) and False (when labels values != i)
-            cp[labels == i] selects only those values from cp when 
-            the "labels==i" array has True value
-            cp[labels == i][:,0 or 1] selects the c1's or c2's from 
-            the cp[labels == i] array
-            '''
-            ions_psp_dict['%i' % i] = len(c1_stuff['%i' % i])
-            rel_popu_psp_dict['%i' % i] = 1.0 * len(
-                c1_stuff['%i' % i]) / len(cp[:, 0])
-
-            ions_psp.append(len(c1_stuff['%i' % i]))
-            # ions per spot
-            rel_popu_psp.append(1.0 * len(c1_stuff['%i' % i]) /
-                                len(cp[:, 0]))
+        cluster_ind = np.arange(0, self.n_comps_found_)  # array of cluster numbers
 
         c1s, c1s_err, c1_chi_sq, c1_red_chi_sq, c1_sigma_abs, \
-        c1_sigma_err, c1_height_abs, c1_height_err, c1_fw_hm_abs, \
-        c1_fw_hm_err = [], [], [], [], [], [], [], [], [], []
+            c1_sigma_err, c1_height_abs, c1_height_err, c1_fw_hm_abs, \
+            c1_fw_hm_err = [], [], [], [], [], [], [], [], [], []
         c2s, c2s_err, c2_chi_sq, c2_red_chi_sq, c2_sigma_abs, \
-        c2_sigma_err, c2_height_abs, c2_height_err, c2_fw_hm_abs, \
-        c2_fw_hm_err = [], [], [], [], [], [], [], [], [], []
+            c2_sigma_err, c2_height_abs, c2_height_err, c2_fw_hm_abs, \
+            c2_fw_hm_err = [], [], [], [], [], [], [], [], [], []
         cluster_err = []
-
-        c1_clusters, c2_clusters = {}, {}  # all c1's and c2's of the
-        # ion-hits in each cluster
 
         for i in cluster_ind:
             plt.figure()
@@ -668,9 +612,6 @@ class GaussianMixtureModel(GaussianMixtureBase):
                     if self.labels_[j] == self.unique_labels_[i]:
                         c1_cut.append(cp[:, 2][j])
                         c2_cut.append(cp[:, 3][j])
-
-            c1_clusters['%i' % i] = c1_cut
-            c2_clusters['%i' % i] = c2_cut
 
             width_c1 = max(c1_cut) - min(c1_cut)
             width_c2 = max(c2_cut) - min(c2_cut)
@@ -772,16 +713,67 @@ class GaussianMixtureModel(GaussianMixtureBase):
                         np.sqrt(c1_fit_array[1] ** 2 +
                                 c2_fit_array[1] ** 2))
 
-            plt.title('GMM c1_bins (cadetblue) = %i ; c2_bins '
+            plt.title('GMM %i comps c1_bins (cadetblue) = %i ; c2_bins '
                       '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
                       'Cluster unc=%0.5f' % (
-                num_bins(c1_cut), num_bins(c2_cut), c1s[i], c2s[i],
-                cluster_err[i]))
+                        self.n_comps_found_, num_bins(c1_cut),
+                        num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
             plt.xlim(-10, 10)
             plt.show()
 
         self._calc_secondary_centers_unc(c1s, c1s_err, c2s, c2s_err,
                                          data_frame_object)
+
+    def _cluster_data_one_d(self, x):
+        """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
+
+        Assigns the object the attributes 'means_',
+        'covariances_', 'weights_', 'labels_', 'responsibilities_',
+        and 'n_comps_found_'.
+
+        Parameters
+        ----------
+        x : array-like, shape (n_samples, n_attributes)
+            The data to be clustered.
+        """
+        # Initialize multiprocessing variables
+        n_cores = multiprocessing.cpu_count()
+        test_n_comps = list(range(1, self.n_components + 1))
+        inputs = tqdm(test_n_comps)
+        ic_list = []
+
+        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
+            func = partial(self._GMM_fit, x)  # Initialize function to be processed
+            results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process results
+                                               for i in inputs)
+
+            # Collect IC's
+            if self.ic == 'None':
+                raise ValueError(
+                    "When using the method 'cluster_data', the "
+                    "parameter 'ic' must be in {'AIC', 'BIC'}."
+                    "If 'ic' == 'None', then use the method "
+                    "'cluster_data_strict'.")
+            elif self.ic == 'AIC':
+                for r in results:
+                    aic = r.aic(x)
+                    ic_list.append(aic)
+            else:  # if self.ic == 'BIC':
+                for r in results:
+                    bic = r.bic(x)
+                    ic_list.append(bic)
+
+            # Find minimum IC and its corresponding model
+            best_ic = min(ic_list)
+            model = results[ic_list.index(best_ic)]
+
+            # Assign attributes
+            self.means_ = model.means_
+            self.covariances_ = model.covariances_
+            self.weights_ = model.weights_
+            self.labels_ = model.predict(x)
+            self.responsibilities_ = model.predict_proba(x)
+            self.n_comps_found_ = np.shape(self.weights_)[0]
 
     def cluster_data(self, data_frame_object):
         """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
@@ -792,18 +784,20 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
         """
         self._check_base_parameters()
 
+        # Initialize multiprocessing variables
         n_cores = multiprocessing.cpu_count()
         test_n_comps = list(range(1, self.n_components + 1))
         inputs = tqdm(test_n_comps)
         ic_list = []
 
+        # Gather data from data_frame_object
         if self.coordinates == 'Cartesian':
             data = data_frame_object.data_array_[
                    :, (0, 1)]
@@ -814,10 +808,11 @@ class GaussianMixtureModel(GaussianMixtureBase):
                    :, (2, 3)]
 
         if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
-            func = partial(self._GMM_fit, data)
-            results = Parallel(n_jobs=n_cores)(delayed(func)(i)
+            func = partial(self._GMM_fit, data)  # Initialize function to be processed
+            results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process function
                                                for i in inputs)
 
+            # Collect IC's
             if self.ic == 'None':
                 raise ValueError(
                     "When using the method 'cluster_data', the "
@@ -833,9 +828,11 @@ class GaussianMixtureModel(GaussianMixtureBase):
                     bic = r.bic(data)
                     ic_list.append(bic)
 
+            # Find minimum IC and its corresponding model
             best_ic = min(ic_list)
             model = results[ic_list.index(best_ic)]
 
+            # Assign attributes
             self.means_ = model.means_
             self.covariances_ = model.covariances_
             self.weights_ = model.weights_
@@ -855,13 +852,14 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
-                The object that contains the processed data and
-                information that is used by the algorithms to do the
-                fits.
+        data_frame_object : DataFrame class object
+            The object that contains the processed data and
+            information that is used by the algorithms to do the
+            fits.
         """
         self._check_base_parameters()
 
+        # Collect data from data_frame_object
         if self.coordinates == 'Cartesian':
             data = data_frame_object.data_array_[
                    :, (0, 1)]
@@ -873,6 +871,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         model = self._GMM_fit(data, self.n_components)
 
+        # Assign attributes
         self.means_ = model.means_
         self.covariances_ = model.covariances_
         self.weights_ = model.weights_
@@ -883,53 +882,6 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         self._calculate_centers_uncertainties(data_frame_object)
 
-    def _cluster_data_one_d(self, x):
-        """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
-
-        Assigns the object the attributes 'means_',
-        'covariances_', 'weights_', 'labels_', 'responsibilities_',
-        and 'n_comps_found_'.
-
-        Parameters
-        ----------
-        x : array-like, shape (n_samples, n_attributes)
-            The data to be clustered
-        """
-        n_cores = multiprocessing.cpu_count()
-        test_n_comps = list(range(1, self.n_components + 1))
-        inputs = tqdm(test_n_comps)
-        ic_list = []
-
-        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
-            func = partial(self._GMM_fit, x)
-            results = Parallel(n_jobs=n_cores)(delayed(func)(i)
-                                               for i in inputs)
-
-            if self.ic == 'None':
-                raise ValueError(
-                    "When using the method 'cluster_data', the "
-                    "parameter 'ic' must be in {'AIC', 'BIC'}."
-                    "If 'ic' == 'None', then use the method "
-                    "'cluster_data_strict'.")
-            elif self.ic == 'AIC':
-                for r in results:
-                    aic = r.aic(x)
-                    ic_list.append(aic)
-            else:  # if self.ic == 'BIC':
-                for r in results:
-                    bic = r.bic(x)
-                    ic_list.append(bic)
-
-            best_ic = min(ic_list)
-            model = results[ic_list.index(best_ic)]
-
-            self.means_ = model.means_
-            self.covariances_ = model.covariances_
-            self.weights_ = model.weights_
-            self.labels_ = model.predict(x)
-            self.responsibilities_ = model.predict_proba(x)
-            self.n_comps_found_ = np.shape(self.weights_)[0]
-
     def fit_over_one_dimensional_histograms(self, fig, axs,
                                             data_frame_object):
         """Fit over the histograms generated with the data frame object.
@@ -937,7 +889,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
         Given a data frame object that has already been used
         to generate histograms for each dimension of data, this
         method will graph a GMM fit over each dimension. The returned
-        matplotlib.plyplot figure can be shown and saved separately.
+        matplotlib.plyplot figure may be shown with the method plt.show()
+        or saved with the method plt.savefig() separately.
 
         Parameters
         ----------
@@ -947,7 +900,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         axs : matplotlib.pyplot axes
             Contains the four different histograms.
 
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -1002,7 +955,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
@@ -1112,14 +1065,14 @@ class GaussianMixtureModel(GaussianMixtureBase):
     def show_results(self, data_frame_object):
         """Return the clustering results.
 
-        The returned matplotlib.plyplot figure can be shown and saved
-        separately.
-
-        This method was written by Dwaipayan Ray and Adrian Valverde.
+        The returned matplotlib.plyplot figure may be shown
+        with the method plt.show() or saved with the method
+        plt.savefig() separately. This method was written by
+        Dwaipayan Ray and Adrian Valverde.
 
         Parameters
         ----------
-        data_frame_object : object from the class DataFrame
+        data_frame_object : DataFrame class object
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.

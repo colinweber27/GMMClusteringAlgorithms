@@ -284,7 +284,7 @@ class DataFrame:
 
         filename = self.directory + '/' + self.file
 
-        ''' Read the file '''
+        # Read the .lmf file
         file = open(filename, 'rb')  # 'rb' r for read, b for binary
         file.seek(0, 2)  # Go to the last byte of the file '2'=os.SEEK_END
         LMFileSize = file.tell()  # Returns the position of the last byte = file's size
@@ -315,7 +315,6 @@ class DataFrame:
         dataBlock = file.read(dataBlockSize)
 
         file.close()
-        # Done reading .lmf file
 
         ''' Conversion of timeStamp strings to integers
         LMStartTime_int and LMStopTime_int are both in seconds 
@@ -323,11 +322,9 @@ class DataFrame:
         lmf_start_time_int = int(LMStartTime)
         lmf_stop_time_int = int(LMStopTime)
         start_time = time.strftime(
-            '%Y-%m-%d %H-%M-%S', (time.localtime(LMStartTime)))
-        # Creates a string
+            '%Y-%m-%d %H-%M-%S', (time.localtime(LMStartTime)))  # type(start_time) = str
         stop_time = time.strftime(
-            '%Y-%m-%d %H-%M-%S', (time.localtime(LMStopTime)))
-        # Creates a string
+            '%Y-%m-%d %H-%M-%S', (time.localtime(LMStopTime)))  # type(stop_time_ = str
         runtime = lmf_stop_time_int - lmf_start_time_int
 
         print("Start:           %s" % start_time)
@@ -342,7 +339,7 @@ class DataFrame:
          where one of the triggers didn't fire for any number of 
          reasons.'''
 
-        ''' Loop through all events in the file '''
+        # Loop through all events in the file
         for event in range(0, LM64NumberOfEvents):
             eventSize = dataBlock[dataOffset: dataOffset + 4]
             eventSize = struct.unpack('<I', eventSize)[0]
@@ -360,8 +357,7 @@ class DataFrame:
             eventTimeStamp = struct.unpack('<Q', eventTimeStamp)[0]
             dataOffset += 8
 
-            ''' eventTimeStamp is counted from the first event
-            absolute TimeStamp might be more useful '''
+            # eventTimeStamp is counted from the first event
             if event == 0:
                 eventTimeStampOffset = eventTimeStamp
 
@@ -369,7 +365,7 @@ class DataFrame:
 
             eventID = 0x0000
             TDC = [0] * 8
-            ''' Loop through all 8 channels '''
+            # Loop through all 8 channels
             for channel in range(0, 8):
                 channelStatus = 0
                 channelValue = 0
@@ -387,13 +383,11 @@ class DataFrame:
                 eventID <<= 1
                 eventID = eventID | channelStatus
 
-            ''' Skip reading Clock and Trigger channels of TDC '''
+            # Skip reading Clock and Trigger channels of TDC
             dataOffset += 2 * (2 + 4)
 
-            ''' If an event has non-zero channels 1, 2, 3, 4 and 7,
-            then it is appended to the eventList '''
+            # If an event has non-zero channels 1, 2, 3, 4 and 7, then it is appended to the eventList
             if (eventID & 0x00F2) == 0x00F2:
-                # ConsistencyIndicator = 2**()
                 x1 = TDC[0] * 0.001
                 x2 = TDC[1] * 0.001
                 y1 = TDC[2] * 0.001
@@ -415,7 +409,7 @@ class DataFrame:
                 trig = eventTimeStamp * 1.0e-12
                 eventList.append(
                     [x, y, tof, timeStamp, radius, phase_deg, x1, x2, y1, y2, sum_x, sum_y, diff_xy, mcp, trig])
-            ''' END Loop through all events in the file '''
+            # END Loop through all events in the file
 
         ''' Conversion of eventList to DataFrame '''
         data_df_prel = pd.DataFrame(
@@ -426,23 +420,20 @@ class DataFrame:
         '''This dataframe has every data point from every event 
         which triggered all 5 TDC channels.'''
 
-        ''' Impose limits :
-        sum_x, sum_y and diff_xy to get rid of noise
-        ion_cut for ion-ion-interaction
-        tof_cut and rad_cut to clean up the spectra a little bit
-        '''
+        # Impose limits :
+        # sum_x, sum_y and diff_xy to get rid of noise
+        # ion_cut for ion-ion-interaction
+        # tof_cut and rad_cut to clean up the spectra a little bit
+
         # If an event is too far away from the circle, or
         # there were too many ions, or it took too long
-        # to get to the PS-MCP from the CPT, it's cut from the
+        # to get to the PS-MCP from the CPT, it's also cut from the
         # data set.
         data_df_prel = data_df_prel.query('45<SumX<48')
         data_df_prel = data_df_prel.query('44<SumY<47')
-        # data_df_prel = data_df_prel.query('-0.5<DiffXY<4.0')
 
         data_df_prel['trig'] = data_df_prel.trig.round(decimals=2)
 
-        ###############################################################################
-        ''' plot ions/shot against timestamp '''
         data_df_prel = data_df_prel.reset_index().set_index("trig")
         data_df_prel["Ions_that_shot"] = \
             data_df_prel.reset_index().groupby("trig").trig.count()
@@ -460,9 +451,7 @@ class DataFrame:
             '%f<TStamp<%f' % (
                 self.time_cut[0], self.time_cut[1]))  # timestamp cut
 
-        ''' Query out the X-s and Y-s near the center (xC, yC) '''
-
-        ''' Final DataFrame '''
+        # Final DataFrame
         data_df = pd.DataFrame([])
         data_df['X [mm]'] = data_df_prel['X']
         data_df['Y [mm]'] = data_df_prel['Y']
@@ -471,7 +460,6 @@ class DataFrame:
         data_df['Radius [mm]'] = data_df_prel['Radius']
         data_df['Phase [deg]'] = data_df_prel['Phase']
         data_df['Ions in that Shot'] = data_df_prel["Ions_that_shot"]
-        # data_df['CPT Shot Number'] = data_df_prel['shot_number']
 
         data_df['TDC Ch1: X1 [ns]'] = data_df_prel['X1']
         data_df['TDC Ch2: X2 [ns]'] = data_df_prel['X2']
@@ -492,7 +480,7 @@ class DataFrame:
     def return_processed_data_Excel(self):
         """Return the processed data as an Excel file.
 
-        The returned writer will have to be saved separately with the
+        The returned writer may be saved separately with the
         method writer.save(). This method was written by Dwaipayan Ray
         and Adrian Valverde.
 
@@ -502,9 +490,9 @@ class DataFrame:
             Contains the processed data.
         """
         if not self.processed_:
-            print("Must run method '_process_lmf' before running "
-                  "'_save_processed_data'.")
-            exit()
+            raise NotImplementedError(
+                "Must run method '_process_lmf' before running "
+                "'_save_processed_data'.")
 
         writer = pd.ExcelWriter(
             self.directory + '%s, tof_cut=%s, ion_cut=%s, '
@@ -516,10 +504,10 @@ class DataFrame:
         workbook = writer.book
         worksheet = writer.sheets['sheet1']
         format1 = workbook.add_format({'center_across': True})
-        # Add some formatting.
+
+        # Formatting and column width
         worksheet.set_column(
             0, len(self.data_frame_.columns) + 1, 20, format1)
-        # Formatting and column width
 
         return writer
 
@@ -544,9 +532,8 @@ class DataFrame:
             saving, which is done separately.
         """
         if not self.processed_:
-            print("Must run method '_process_lmf' before running "
-                  "'_show_figure'.")
-            exit()
+            raise NotImplementedError("Must run method '_process_lmf' "
+                                      "before running '_show_figure'.")
 
         x_raw = self.data_array_[:, 0]
         y_raw = self.data_array_[:, 1]
@@ -563,17 +550,20 @@ class DataFrame:
         # else. Then all "True"-s will be white and "False"-s based
         # on the number in them.
 
-        ''' Plotting spectra '''
+        '''Plot Spectra'''
+        # Initialize figure
         plot = plt.figure(figsize=(6, 6))
         ax = plt.subplot(111, aspect='equal')
 
-        ''' Change limits as necessary '''
+        # Change limits
         plt.xlim(-10.5, 6.5)
         plt.ylim(-6, 10)
 
+        # Set axis labels
         plt.xlabel('X [mm]')
         plt.ylabel('Y [mm]')
 
+        # Plot the data
         plt.pcolormesh(x_edges, y_edges, ions, cmap='viridis')
         c_bar = plt.colorbar()
         c_bar.set_label('Counts')
@@ -581,6 +571,7 @@ class DataFrame:
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
+
         # Only show ticks on the left and bottom spines
         ax.yaxis.set_ticks_position('left')
         ax.xaxis.set_ticks_position('bottom')
@@ -597,11 +588,12 @@ class DataFrame:
 
         Each axis of the plot contains the histogram for one
         dimension of data. Also returns a string that can be
-        used for saving the plot. The returned matplotlib.plyplot
-        figure can be shown and saved separately.
+        used for saving the plot. The returned matplotlib
+        figure can be shown with the method plt.show() and
+        saved with the method plt.savefig() separately.
 
         Returns
-
+        -------
         fig : matplotlib.pyplot figure object
             The overarching figure.
 
@@ -615,17 +607,22 @@ class DataFrame:
         if not self.phase_shifted_:
             shift_phase_dimension(self)
 
+        # Calculate histogram range of each dimension
         widths = [max(self.data_array_[:, i]) -
                   min(self.data_array_[:, i]) for
                   i in range(0, np.shape(self.data_array_)[1])]
-        # Calculate histogram range of each dimension
-        fig, axs = plt.subplots(2, 2, sharey='all')
-        # Initialize figure
-        '''For each data dimension except phase, plot a histogram'''
+
+        fig, axs = plt.subplots(2, 2, sharey='all') # Initialize figure
+
+        # For each data dimension except phase, plot a histogram
+        # Do this by converting each of the four dimensions to base 2
+        # and using these representations to correspond to the 4
+        # subplots.
         for dim in range(0, np.shape(self.data_array_)[1] - 1):
             dim_binary = str(format(dim, '02b'))
             row = int(dim_binary[0])
             col = int(dim_binary[1])
+            # Plot the histograms
             axs[row, col].hist(
                 self.data_array_[:, dim],
                 bins=num_bins(self.data_array_[:, dim]),
@@ -656,7 +653,6 @@ class DataFrame:
             (self.file[0:-4], self.tof_cut, self.ion_cut, self.rad_cut,
              self.time_cut))
         fig.tight_layout()
-        # plt.show()
 
         save_string = 'Histograms of Dimensions, %s, tof_cut=%s, ' \
                       'ion_cut=%s, rad_cut=%s, time_cut=%s.jpeg' \
