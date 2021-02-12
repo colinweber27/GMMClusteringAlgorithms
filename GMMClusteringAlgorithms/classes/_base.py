@@ -394,8 +394,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                 for color in color_list:
                     true_index_list.append(self.colors_.index(color))
                     cluster_index_list.append(colors.index(color))
-                clusters_lost = len(true_index_list) - 1
-                true_index_keep = self.ips_.tolist().index(max(self.ips_[true_index_list]))
+                ips_list = list(self.ips_)
+                true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
                 cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
                 other_true_indices = [i for i in true_index_list if i != true_index_keep]
                 other_true_indices.sort(reverse=True)
@@ -409,7 +409,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                 for i in other_cluster_indices:
                     self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
                 self.unique_labels_ = np.unique(self.labels_)
-                labels_list = self.labels_.tolist()
+                labels_list = list(self.labels_)
                 ips = []
                 for n in self.unique_labels_:
                     cluster_ions = labels_list.count(n)
@@ -418,6 +418,9 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
                 # Recalculate centers
                 self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
+
+                if self.n_comps_found_ == 1:
+                    break
 
                 # Generate new figure
                 fig, save_string = self.show_results(data_frame_object=data_frame_object)
