@@ -859,7 +859,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                            fill=False, color='red'))
 
             plt.plot(data_array[my, 0], data_array[my, 1], 'o',
-                     color=col, markersize=2, label="%s:\n%s" % (
+                     color=col, markersize=3, label="%s:\n%s" % (
                     col, labels[index]))
 
         plt.errorbar(center_array[:, 0], center_array[:, 2],
