@@ -121,6 +121,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         self.ips_ = None
         self.unique_labels_ = None
         self.colors_ = None
+        self.noise_colors_ = None
         self.clustered_ = False
 
     def _check_base_parameters(self):
@@ -161,6 +162,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         that was not used for the fit.
 
         Standard errors are calculated with typical standard error propagation methods.
+        Assigns the attributes 'centers_array_' and 'noise_colors_'.
 
         Parameters
         ----------
@@ -192,7 +194,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         """After clustering the data, organize the cluster centers into a more accessible format.
 
         Assigns the attributes 'centers_array_', 'ips_',
-        'unique_labels', and 'colors_'.
+        'unique_labels', colors_', and 'noise_colors_'.
 
         Parameters
         ----------
@@ -210,7 +212,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         This uses a different method from simply extracting the centers
         and uncertainties from the fit. Instead, it fits a univariate Gaussian
         to each dimension of each cluster and uses the statistics from the
-        fits to calculate the centers. This method was written by Dwaipayan
+        fits to calculate the centers. It assigns the attributes 'centers_array_'
+        and 'noise_colors_'. This method was written by Dwaipayan
         Ray and Adrian Valverde.
 
         Parameters
@@ -270,6 +273,39 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             fits.
         """
         pass
+
+    def _identify_noise_colors(self, data_frame_object):
+        """Identify the colors of noise clusters.
+
+        Noise clusters, loosely speaking, are clusters which we can't conclude are
+        composed of identical ion species. Visually, these clusters can have large
+        uncertainties, fewer ions, or 'span' other clusters, meaning they have samples
+        that are on either side of another cluster. Although it's important to still
+        have these clusters in our data set, it can still be helpful to mark them if we
+        can. One way of doing this is with the 500% rules. We found that we can
+        identify 60% of noise clusters if we define a noise cluster as one whose
+        standard error in the center spot is 500% higher than the weighted average of
+        the standard errors of the center spots in a data set, with the weights
+        given by the number of samples in the cluster. This method applies that rule
+        to identify some, but not all, of the noise clusters, which it identifies by
+        color. It assigns the attribute 'noise_colors_'.
+        """
+        colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
+                  'cyan', 'indianred', 'chartreuse', 'seagreen',
+                  'darkorange', 'purple', 'aliceblue', 'olivedrab',
+                  'deeppink', 'tan', 'rosybrown', 'khaki',
+                  'aquamarine', 'cornflowerblue', 'saddlebrown',
+                  'lightgray']
+
+        self.noise_colors_ = []
+
+        weighted_phase_err = np.sum(np.multiply(self.ips_, self.centers_array_[:, 7])) / np.sum(self.ips_)
+        weighted_clust_err = np.sum(np.multiply(self.ips_, self.centers_array_[:, 8])) / np.sum(self.ips_)
+
+        for i in range(self.n_comps_found_):
+            if self.centers_array_[i, 7] > 5 * weighted_phase_err or \
+                self.centers_array_[i, 8] > 5 * weighted_clust_err:
+                self.noise_colors_.append(colors[self.unique_labels_[i]])
 
     @abstractmethod
     def fit_over_one_dimensional_histograms(self, fig, axs,
@@ -361,7 +397,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         module allows the user to select multiple clusters to merge
         into a single cluster by clicking on them. Once the clusters
         are selected, the fit attributes 'n_comps_found_', 'labels_',
-        'unique_labels_', 'colors_', and 'ips_' are updated. The process
+        'unique_labels_', 'colors_', and 'ips_', 'centers_array_', and
+        'noise_colors_' are updated. The process
         repeats until all spots have been addressed. Before closing,
         it creates a final matplotlib figure of the results and returns
         it along with a save_string.

@@ -120,6 +120,10 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
     colors_ : list, len = n_components
         A list of the colors of each cluster.
+        
+    noise_colors_ : list
+        A list of the colors of each cluster that has been identified as a noise cluster, which 
+        is one that we can't conclude is composed of identical ion species.
     """
 
     def __init__(self, n_components=1, *, cov_type='full', tol=1e-5,
@@ -182,7 +186,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         for the fit.
 
         Standard Errors are calculated with typical standard error propagation methods.
-        Initialize the attribute 'centers_array_'.
+        Assign the attributes 'centers_array_' and 'noise_colors_'.
 
         Parameters
         ----------
@@ -241,12 +245,14 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         self.centers_array_ = np.vstack((xs, xs_err, ys, ys_err,
                                          c1s, c1s_err, c2s,
                                          c2s_err, cluster_err)).T
+        
+        self._identify_noise_colors(data_frame_object=data_frame_object)
 
     def _calculate_centers_uncertainties(self, data_frame_object):
         """After clustering the data, organize the cluster centers into a more accessible format.
 
         Assigns the attributes 'centers_array_', 'ips_',
-        'unique_labels', and 'colors_'.
+        'unique_labels', 'colors_', and 'noise_colors_'.
 
         Parameters
         ----------
@@ -307,7 +313,8 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         This uses a different method from simply extracting the centers
         and uncertainties from the fit. Instead, it fits a univariate Gaussian
         to each dimension of each cluster and uses the statistics from the
-        fits to calculate the centers. This method was written by Dwaipayan
+        fits to calculate the centers. It finally assigns the attributes
+        'centers_array_' and 'noise_colors_'. This method was written by Dwaipayan
         Ray and Adrian Valverde.
 
         Parameters
@@ -834,9 +841,9 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         labels = []
         for i in range(len(self.ips_)):
             labels.append(
-                r"%i counts (%.1f%%), x=%.3f$\pm$ %.3f, "
+                r"%s%i counts (%.1f%%), x=%.3f$\pm$ %.3f, "
                 r"y=%.3f$\pm$%.3f, r=%.3f$\pm$%.3f, "
-                r"p=%.3f$\pm$%.3f" % (
+                r"p=%.3f$\pm$%.3f" % (('*' if self.colors_[i] in self.noise_colors_ else ''),
                     self.ips_[i], 100.0 * self.ips_[i] / n_samples,
                     self.centers_array_[i, 0],
                     self.centers_array_[i, 1],
