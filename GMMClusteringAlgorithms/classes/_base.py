@@ -324,7 +324,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             The overarching figure object.
 
         axs : matplotlib.pyplot axes
-            Contains the four different histograms.
+            The object containing the four different histograms.
 
         data_frame_object : DataFrame class object
             The object that contains the processed data and
@@ -382,7 +382,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         Returns
         -------
         fig : matplotlib.pyplot figure
-            Contains the clustered results.
+            The figure containing the clustered results.
 
         save_string : str
             The recommended file name to use when saving the plot,
@@ -413,7 +413,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         Returns
         -------
         fig : matplotlib figure object
-            Contains the clustered results.
+            The figure containing the clustered results.
 
         save_string : str
             The recommended file name to use when saving the plot,

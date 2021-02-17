@@ -267,7 +267,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         for n in self.unique_labels_:
             cluster_ions = labels_list.count(n)
             ips.append(cluster_ions)
-        self.ips_ = np.array(ips).reshape(-1, 1)
+        self.ips_ = np.array(ips).reshape(-1,)
 
         c1s = self.means_[:, 0]
         c2s = self.means_[:, 1]
@@ -636,7 +636,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
             The overarching figure object.
 
         axs : matplotlib.pyplot axes
-            Contains the four different histograms.
+            The object containing the four different histograms.
 
         data_frame_object : DataFrame class object
             The object that contains the processed data and
@@ -802,7 +802,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         Returns
         -------
         fig : matplotlib.pyplot figure
-            Contains the clustered results.
+            The figure containing the clustered results.
 
         save_string : str
             The recommended file name to use when saving the plot,

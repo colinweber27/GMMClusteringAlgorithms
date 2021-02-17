@@ -487,7 +487,7 @@ class DataFrame:
         Returns
         -------
         writer : Pandas ExcelWriter object
-            Contains the processed data.
+            The Excel object containing the processed data.
         """
         if not self.processed_:
             raise NotImplementedError(
@@ -598,7 +598,7 @@ class DataFrame:
             The overarching figure.
 
         axs : matplotlib.pyplot axis object
-            Contains the four different histograms.
+            The object containing the four different histograms.
 
         save_string : str
             The recommended file name to use when saving the plot,
