@@ -19,7 +19,7 @@ def css3_lists():
 
 class ClusterMergerGUI:
     """The GUI to assist with cluster merging."""
-    def __init__(self, master, color_list, shape, image, np_image):
+    def __init__(self, master, color_list: list, shape: tuple, image, np_image):
         self.master = master
         master.title("Cluster Merger GUI")
 
@@ -33,7 +33,7 @@ class ClusterMergerGUI:
         self.label.bind('<Button-1>', lambda event: self.leftclick(event, np_image, color_list, names, kdt_db))
         self.label.pack(fill="both", expand=1)
 
-    def leftclick(self, event, np_image, color_list, names, kdt_db):
+    def leftclick(self, event, np_image, color_list: list, names, kdt_db):
         distance, index = kdt_db.query(np_image[event.y, event.x])
         color = names[index]
         color_list.append(color)

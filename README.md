@@ -14,7 +14,7 @@ dimension of the component means is _not_ a parameter, and a
 BGM fit where the number of components is _not_ a parameter.
 The rest of the package facilitates
 quick, intuitive use of the GMM algorithms through the use 
-of 4 classes, and visualization methods for debugging. 
+of 4 classes, and visualization methods for debugging.
 
 #### 1. DataFrame
 * This class is responsible for processing the .lmf 
@@ -84,7 +84,7 @@ then navigate to the virtual environment's directory, activate
 the virtual environment, and install with the commands above.
 
 ### Source code
-You can check the latest source code with the command 
+You can check the latest source code with the command  
 `git clone https://github.com/colinweber27/GMMClusteringAlgorithms`
 
   

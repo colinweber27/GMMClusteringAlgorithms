@@ -329,9 +329,9 @@ class GaussianMixtureModel(GaussianMixtureBase):
         is one that we can't conclude is composed of identical ion species.
     """
 
-    def __init__(self, n_components=1, *, cov_type='full', tol=1e-5,
-                 max_iter=500, n_init=30, ic='BIC',
-                 coordinates='Cartesian'):
+    def __init__(self, n_components: int = 1, *, cov_type: str = 'full', tol: float = 1e-5,
+                 max_iter: int = 500, n_init: int = 30, ic: str = 'BIC',
+                 coordinates: str = 'Cartesian'):
         super().__init__(
             n_components=n_components, cov_type=cov_type, tol=tol,
             max_iter=max_iter, n_init=n_init)
@@ -345,6 +345,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         self.coordinates = coordinates
         self.clustered_ = False
         self.n_comps_found_ = self.n_components
+        self.noise_colors_ = []
 
     def _check_parameters(self):
         """Check the parameters that don't originate in the base model."""
@@ -395,7 +396,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         return model
 
     def _calc_secondary_centers_unc(self, c1s, c1s_err, c2s,
-                                    c2s_err, data_frame_object):
+                                    c2s_err, data_frame_object: object):
         """Calculate the coordinates of the cluster centers for the coordinate system that
         was not used for the fit.
 
@@ -458,7 +459,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
                                                   np.divide(1, np.subtract(c1s, xC))),
                                       c2s_err)), np.square(np.multiply(np.multiply(
                                         np.divide(1, np.add(1, np.square(np.divide(np.subtract(c2s, yC),
-                                                                                   np.subtract(c1s, xC))))),
+                                                            np.subtract(c1s, xC))))),
                                         np.divide(1, np.subtract(c1s, xC))), yC_unc))))))
 
             cluster_err = np.sqrt(np.add(np.square(c1s_err),
@@ -511,7 +512,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         self._identify_noise_colors(data_frame_object=data_frame_object)
 
-    def _calculate_centers_uncertainties(self, data_frame_object):
+    def _calculate_centers_uncertainties(self, data_frame_object: object):
         """After clustering the data, organize the cluster centers into a more accessible format.
 
         Assigns the attributes 'centers_array_', 'ips_',
@@ -569,7 +570,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         for i in self.unique_labels_:
             self.colors_.append(colors[i])
 
-    def recalculate_centers_uncertainties(self, data_frame_object):
+    def recalculate_centers_uncertainties(self, data_frame_object: object):
         """Recalculate the centers of each cluster and the uncertainties in the centers.
 
         This uses a different method from simply extracting the centers
@@ -723,8 +724,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
             plt.title('GMM %i comps c1_bins (cadetblue) = %i ; c2_bins '
                       '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
                       'Cluster unc=%0.5f' % (
-                        self.n_comps_found_, num_bins(c1_cut),
-                        num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
+                          self.n_comps_found_, num_bins(c1_cut),
+                          num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
             plt.xlim(-10, 10)
             plt.show()
 
@@ -749,7 +750,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         inputs = tqdm(test_n_comps)
         ic_list = []
 
-        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
+        if __name__ == 'GMMClusteringAlgorithms.classes._gaussian_mixture_model':
             func = partial(self._GMM_fit, x)  # Initialize function to be processed
             results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process results
                                                for i in inputs)
@@ -782,7 +783,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
             self.responsibilities_ = model.predict_proba(x)
             self.n_comps_found_ = np.shape(self.weights_)[0]
 
-    def cluster_data(self, data_frame_object):
+    def cluster_data(self, data_frame_object: object):
         """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
 
         Assigns the object the attributes 'means_',
@@ -814,7 +815,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
             data = data_frame_object.data_array_[
                    :, (2, 3)]
 
-        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
+        if __name__ == 'GMMClusteringAlgorithms.classes._gaussian_mixture_model':
             func = partial(self._GMM_fit, data)  # Initialize function to be processed
             results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process function
                                                for i in inputs)
@@ -850,7 +851,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
             self._calculate_centers_uncertainties(data_frame_object)
 
-    def cluster_data_strict(self, data_frame_object):
+    def cluster_data_strict(self, data_frame_object: object):
         """Cluster the data, but restrict n_components to the value of the parameter 'n_components'.
 
         Assigns the mixture object the attributes 'means_',
@@ -889,8 +890,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         self._calculate_centers_uncertainties(data_frame_object)
 
-    def fit_over_one_dimensional_histograms(self, fig, axs,
-                                            data_frame_object):
+    def fit_over_one_dimensional_histograms(self, fig: object, axs,
+                                            data_frame_object: object):
         """Fit over the histograms generated with the data frame object.
 
         Given a data frame object that has already been used
@@ -954,7 +955,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig
 
-    def get_pdf_fig(self, data_frame_object):
+    def get_pdf_fig(self, data_frame_object: object):
         """Plot the pdf of the Gaussian mixture on a surface.
 
         The returned matplotlib.plyplot figure can be shown and saved
@@ -1069,7 +1070,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig, save_string
 
-    def get_results_fig(self, data_frame_object):
+    def get_results_fig(self, data_frame_object: object):
         """Return the clustering results.
 
         The returned matplotlib.plyplot figure may be shown
@@ -1132,15 +1133,15 @@ class GaussianMixtureModel(GaussianMixtureBase):
                 r"%s%i counts (%.1f%%), x=%.3f$\pm$ %.3f, "
                 r"y=%.3f$\pm$%.3f, r=%.3f$\pm$%.3f, "
                 r"p=%.3f$\pm$%.3f" % (('*' if self.colors_[i] in self.noise_colors_ else ''),
-                    self.ips_[i], 100.0 * self.ips_[i] / n_samples,
-                    self.centers_array_[i, 0],
-                    self.centers_array_[i, 1],
-                    self.centers_array_[i, 2],
-                    self.centers_array_[i, 3],
-                    self.centers_array_[i, 4],
-                    self.centers_array_[i, 5],
-                    self.centers_array_[i, 6],
-                    self.centers_array_[i, 7]))
+                                      self.ips_[i], 100.0 * self.ips_[i] / n_samples,
+                                      self.centers_array_[i, 0],
+                                      self.centers_array_[i, 1],
+                                      self.centers_array_[i, 2],
+                                      self.centers_array_[i, 3],
+                                      self.centers_array_[i, 4],
+                                      self.centers_array_[i, 5],
+                                      self.centers_array_[i, 6],
+                                      self.centers_array_[i, 7]))
         labels.append(discarded_counts_stuff)
 
         label_indices = np.arange(0, len(self.unique_labels_))
