@@ -325,9 +325,9 @@ class GaussianMixtureModel(GaussianMixtureBase):
         A list of the colors of each cluster.
     """
 
-    def __init__(self, n_components=1, *, cov_type='full', tol=1e-5,
-                 max_iter=500, n_init=30, ic='BIC',
-                 coordinates='Cartesian'):
+    def __init__(self, n_components: int = 1, *, cov_type: str = 'full', tol: float = 1e-5,
+                 max_iter: int = 500, n_init: int = 30, ic: str = 'BIC',
+                 coordinates: str = 'Cartesian'):
         super().__init__(
             n_components=n_components, cov_type=cov_type, tol=tol,
             max_iter=max_iter, n_init=n_init)
@@ -391,7 +391,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         return model
 
     def _calc_secondary_centers_unc(self, c1s, c1s_err, c2s,
-                                    c2s_err, data_frame_object):
+                                    c2s_err, data_frame_object: object):
         """Calculate the coordinates of the cluster centers for the coordinate system that
         was not used for the fit.
 
@@ -505,7 +505,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
                                              c1s, c1s_err, c2s,
                                              c2s_err, cluster_err)).T
 
-    def _calculate_centers_uncertainties(self, data_frame_object):
+    def _calculate_centers_uncertainties(self, data_frame_object: object):
         """After clustering the data, organize the cluster centers into a more accessible format.
 
         Assigns the attributes 'centers_array_', 'ips_',
@@ -563,7 +563,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         for i in self.unique_labels_:
             self.colors_.append(colors[i])
 
-    def recalculate_centers_uncertainties(self, data_frame_object):
+    def recalculate_centers_uncertainties(self, data_frame_object: object):
         """Recalculate the centers of each cluster and the uncertainties in the centers.
 
         This uses a different method from simply extracting the centers
@@ -742,7 +742,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         inputs = tqdm(test_n_comps)
         ic_list = []
 
-        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
+        if __name__ == 'GMMClusteringAlgorithms.classes._gaussian_mixture_model':
             func = partial(self._GMM_fit, x)  # Initialize function to be processed
             results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process results
                                                for i in inputs)
@@ -775,7 +775,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
             self.responsibilities_ = model.predict_proba(x)
             self.n_comps_found_ = np.shape(self.weights_)[0]
 
-    def cluster_data(self, data_frame_object):
+    def cluster_data(self, data_frame_object: object):
         """Use the Gaussian Mixture Model fit from the sklearn package to cluster the data.
 
         Assigns the object the attributes 'means_',
@@ -807,7 +807,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
             data = data_frame_object.data_array_[
                    :, (2, 3)]
 
-        if __name__ == 'gmm_clustering_algorithms.classes._gaussian_mixture_model':
+        if __name__ == 'GMMClusteringAlgorithms.classes._gaussian_mixture_model':
             func = partial(self._GMM_fit, data)  # Initialize function to be processed
             results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process function
                                                for i in inputs)
@@ -843,7 +843,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
             self._calculate_centers_uncertainties(data_frame_object)
 
-    def cluster_data_strict(self, data_frame_object):
+    def cluster_data_strict(self, data_frame_object: object):
         """Cluster the data, but restrict n_components to the value of the parameter 'n_components'.
 
         Assigns the mixture object the attributes 'means_',
@@ -882,8 +882,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         self._calculate_centers_uncertainties(data_frame_object)
 
-    def fit_over_one_dimensional_histograms(self, fig, axs,
-                                            data_frame_object):
+    def fit_over_one_dimensional_histograms(self, fig: object, axs,
+                                            data_frame_object: object):
         """Fit over the histograms generated with the data frame object.
 
         Given a data frame object that has already been used
@@ -947,7 +947,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig
 
-    def get_pdf_fig(self, data_frame_object):
+    def get_pdf_fig(self, data_frame_object: object):
         """Plot the pdf of the Gaussian mixture on a surface.
 
         The returned matplotlib.plyplot figure can be shown and saved
@@ -1062,7 +1062,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         return fig, save_string
 
-    def get_results_fig(self, data_frame_object):
+    def get_results_fig(self, data_frame_object: object):
         """Return the clustering results.
 
         The returned matplotlib.plyplot figure may be shown

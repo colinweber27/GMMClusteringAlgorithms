@@ -53,7 +53,7 @@ def _check_directory(directory):
             "change the parameter to point to an existing one.")
 
 
-def shift_phase_dimension(data_frame_object):
+def shift_phase_dimension(data_frame_object: object):
     """Shift the phase dimension of the data prior to analyzing.
 
     This is done to minimize the errors that arise because of
