@@ -485,7 +485,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                     for n in self.unique_labels_:
                         cluster_ions = labels_list.count(n)
                         ips.append(cluster_ions)
-                    self.ips_ = np.array(ips)
+                    self.ips_ = np.array(ips).reshape(-1,)
 
                     # Recalculate centers
                     self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)

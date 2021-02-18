@@ -531,7 +531,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         for n in self.unique_labels_:
             cluster_ions = labels_list.count(n)
             ips.append(cluster_ions)
-        self.ips_ = np.array(ips).reshape(-1, 1)
+        self.ips_ = np.array(ips).reshape(-1,)
 
         c1s = self.means_[:, 0]
         c2s = self.means_[:, 1]
