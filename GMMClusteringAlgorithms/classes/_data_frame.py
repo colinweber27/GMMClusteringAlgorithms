@@ -579,7 +579,7 @@ class DataFrame:
         save_string = '%s_UNCLUSTERED,tof_cut=%s,ion_cut=%s,' \
                       'rad_cut=%s,time_cut=%s.jpeg' % \
                       (self.file[0:-4], self.tof_cut, self.ion_cut,
-                       self.rad_cut, self.time_cut),
+                       self.rad_cut, self.time_cut)
 
         return plot, save_string
 
