@@ -269,6 +269,20 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
             ips.append(cluster_ions)
         self.ips_ = np.array(ips).reshape(-1,)
 
+        if len(ips) != len(self.weights_):
+            self.means_ = self.means_[self.unique_labels_, :]
+            self.weights_ = self.weights_[self.unique_labels_]
+            if self.cov_type == 'spherical':
+                self.covariances_ = self.covariances_[self.unique_labels_]
+            elif self.cov_type == 'diagonal':
+                self.covariances_ = self.covariances_[self.unique_labels_, :]
+            elif self.cov_type == 'tied':
+                self.covariances_ = self.covariances_
+            else:  # if self.cov_type == 'full':
+                self.covariances_ = self.covariances_[self.unique_labels_, :, :]
+            self.responsibilities_ = self.responsibilities_[:, self.unique_labels_]
+            self.n_comps_found_ = np.shape(self.weights_)[0]
+
         c1s = self.means_[:, 0]
         c2s = self.means_[:, 1]
 
