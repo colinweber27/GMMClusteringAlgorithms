@@ -305,7 +305,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         for i in range(self.n_comps_found_):
             if self.centers_array_[i, 7] > 5 * weighted_phase_err or \
                 self.centers_array_[i, 8] > 5 * weighted_clust_err or \
-                self.ips_ <= 10:
+                    self.ips_[i] <= 10:
                 self.noise_colors_.append(colors[self.unique_labels_[i]])
 
     @abstractmethod
