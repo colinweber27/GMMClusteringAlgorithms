@@ -464,7 +464,11 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                     true_index_list = []  # Corresponds to the indices of the clusters in centers_array
                     cluster_index_list = []  # Corresponds to the indices of the clusters relative to labels_ and colors
                     for color in color_list:
-                        true_index_list.append(self.colors_.index(color))
+                        try:
+                            true_index_list.append(self.colors_.index(color))
+                        except:
+                            print("The color selected, %s, doesn't match any cluster colors." % color)
+                            break
                         cluster_index_list.append(colors.index(color))
                     ips_list = list(self.ips_)
                     true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
