@@ -391,6 +391,48 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         """
         pass
 
+    def _set_GUI(self, data_frame_object: object):
+        """Set up the GUI to be used in the cluster merger method.
+
+        Parameters
+        ----------
+        data_frame_object : object from the class DataFrame
+            The object that contains the processed data and
+            information that is used by the algorithms to do the
+            fits.
+
+        Returns
+        -------
+        fig : matplotlib figure object
+            The figure containing the clustered results.
+
+        canvas : matplotlib canvas object
+            The canvas that contains the drawing for the GUI.
+
+        np_image : array-like, shape (n-rows, n-columns, 3)
+            The image in np RGB array format.
+
+        PIL_image : PIL image object
+            The image in PIL format.
+
+        color_list : list
+            An empty list that will hold the colors to be merged.
+        """
+        plt.close()
+        
+        fig, _ = self.get_results_fig(data_frame_object=data_frame_object)
+
+        canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
+        canvas.draw()  # Draw the canvas and cache the renderer
+        ncols, nrows = fig.canvas.get_width_height()
+        np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
+        # Convert figure to np_array, which is also an OpenCV image
+        PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
+
+        color_list = []  # Initialize cluster list
+
+        return fig, canvas, np_image, PIL_image, color_list
+
     def cluster_merger(self, data_frame_object: object):
         """Merge clusters into one spot in the case of an over-fitting error.
 
@@ -424,16 +466,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             raise NotImplementedError("Must run a method to cluster the "
                                       "data before visualization.")
 
-        fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
-        
-        canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
-        canvas.draw()  # Draw the canvas and cache the renderer
-        ncols, nrows = fig.canvas.get_width_height()
-        np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
-        # Convert figure to np_array, which is also an OpenCV image
-        PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
-
-        color_list = []  # Initialize cluster list
+        fig, canvas, np_image, PIL_image, color_list = self._set_GUI(data_frame_object=data_frame_object)
 
         done = False
 
@@ -463,72 +496,59 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                     # Find indexes of colors
                     true_index_list = []  # Corresponds to the indices of the clusters in centers_array
                     cluster_index_list = []  # Corresponds to the indices of the clusters relative to labels_ and colors
+                    brk = False
                     for color in color_list:
                         try:
                             true_index_list.append(self.colors_.index(color))
+                            cluster_index_list.append(colors.index(color))
                         except:
-                            print("The color selected, %s, doesn't match any cluster colors." % color)
+                            print("One of the colors selected, %s, doesn't match any cluster colors. "
+                                  "Please try again." % color)
+                            brk = True
+
+                    if not brk:
+                        ips_list = list(self.ips_)
+                        true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
+                        cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
+                        other_true_indices = [i for i in true_index_list if i != true_index_keep]
+                        other_true_indices.sort(reverse=True)
+                        other_cluster_indices = [i for i in cluster_index_list if i != cluster_index_keep]
+                        other_cluster_indices.sort(reverse=True)
+
+                        # Adjust fit results accordingly
+                        self.n_comps_found_ -= len(other_true_indices)
+                        for i in other_true_indices:
+                            self.colors_.remove(self.colors_[i])
+                        for i in other_cluster_indices:
+                            self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
+                        self.unique_labels_ = np.unique(self.labels_)
+                        labels_list = list(self.labels_)
+                        ips = []
+                        for n in self.unique_labels_:
+                            cluster_ions = labels_list.count(n)
+                            ips.append(cluster_ions)
+                        self.ips_ = np.array(ips).reshape(-1,)
+
+                        # Recalculate centers
+                        self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
+
+                        if self.n_comps_found_ == 1:
                             break
-                        cluster_index_list.append(colors.index(color))
-                    ips_list = list(self.ips_)
-                    true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
-                    cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
-                    other_true_indices = [i for i in true_index_list if i != true_index_keep]
-                    other_true_indices.sort(reverse=True)
-                    other_cluster_indices = [i for i in cluster_index_list if i != cluster_index_keep]
-                    other_cluster_indices.sort(reverse=True)
-
-                    # Adjust fit results accordingly
-                    self.n_comps_found_ -= len(other_true_indices)
-                    for i in other_true_indices:
-                        self.colors_.remove(self.colors_[i])
-                    for i in other_cluster_indices:
-                        self.labels_ = np.where(self.labels_ == i, cluster_index_keep, self.labels_)
-                    self.unique_labels_ = np.unique(self.labels_)
-                    labels_list = list(self.labels_)
-                    ips = []
-                    for n in self.unique_labels_:
-                        cluster_ions = labels_list.count(n)
-                        ips.append(cluster_ions)
-                    self.ips_ = np.array(ips).reshape(-1,)
-
-                    # Recalculate centers
-                    self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
-
-                    if self.n_comps_found_ == 1:
-                        break
                 else:
-                    print("Please select at least 2 clusters. If there are no more merges you want "
-                          "to perform, enter 'n' when prompted.")
+                    if not brk:
+                        print("Please select at least 2 clusters. If there are no more merges you want "
+                              "to perform, enter 'n' when prompted.")
 
-                # Generate new figure
-                fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
+                fig, canvas, np_image, PIL_image, color_list = self._set_GUI(
+                    data_frame_object=data_frame_object)
 
-                # Prepare environment for GUI
-                canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
-                canvas.draw()  # Draw the canvas and cache the renderer
-                ncols, nrows = fig.canvas.get_width_height()
-                np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
-                # Convert figure to np_array, which is also an OpenCV image
-                PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
-
-                color_list = []  # Initialize cluster list
             elif merge == 'n':
                 done = True
             else:
                 print("Invalid response. Please enter either 'y' or 'n'.")
 
-                fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
-
-                # Prepare environment for GUI
-                canvas = FigureCanvas(fig)  # Initialize the canvas, which is the renderer that works with RGB values
-                canvas.draw()  # Draw the canvas and cache the renderer
-                ncols, nrows = fig.canvas.get_width_height()
-                np_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((nrows, ncols, 3))
-                # Convert figure to np_array, which is also an OpenCV image
-                PIL_image = Image.fromarray(np_image).convert('RGB')  # Convert np array image to PIL image
-
-                color_list = []  # Initialize cluster list
+                fig, canvas, np_image, PIL_image, color_list = self._set_GUI(
+                    data_frame_object=data_frame_object)
 
         fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)
 
