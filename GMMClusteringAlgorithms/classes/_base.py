@@ -484,7 +484,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                       "multiple spots you want to do this with, close out the figure after addressing \n"
                       "the first spot and look for the next prompt.")
                 root.mainloop()  # Run GUI
-                
+
+                brk = False
                 if len(color_list) > 1:
                     colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
                               'cyan', 'indianred', 'chartreuse', 'seagreen',
@@ -496,7 +497,6 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                     # Find indexes of colors
                     true_index_list = []  # Corresponds to the indices of the clusters in centers_array
                     cluster_index_list = []  # Corresponds to the indices of the clusters relative to labels_ and colors
-                    brk = False
                     for color in color_list:
                         try:
                             true_index_list.append(self.colors_.index(color))
