@@ -327,6 +327,7 @@ class DataFrame:
             '%Y-%m-%d %H-%M-%S', (time.localtime(LMStopTime)))  # type(stop_time_ = str
         runtime = lmf_stop_time_int - lmf_start_time_int
 
+        print("%s" % self.file)
         print("Start:           %s" % start_time)
         print("Stop:            %s" % stop_time)
         print("Runtime [s]:     %d" % runtime)
