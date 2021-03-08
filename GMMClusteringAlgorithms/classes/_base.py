@@ -274,7 +274,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         """
         pass
 
-    def _identify_noise_colors(self, data_frame_object):
+    def _identify_noise_colors(self):
         """Identify the colors of noise clusters.
 
         Noise clusters, loosely speaking, are clusters which we can't conclude are

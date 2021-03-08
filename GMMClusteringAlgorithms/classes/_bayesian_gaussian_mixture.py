@@ -339,7 +339,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
                                              c1s, c1s_err, c2s,
                                              c2s_err, cluster_err)).T
 
-        self._identify_noise_colors(data_frame_object=data_frame_object)
+        self._identify_noise_colors()
 
     def _calculate_centers_uncertainties(self, data_frame_object: object):
         """After clustering the data, organize the cluster centers into a more accessible format.
