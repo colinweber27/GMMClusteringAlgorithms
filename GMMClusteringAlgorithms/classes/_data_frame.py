@@ -557,8 +557,14 @@ class DataFrame:
         ax = plt.subplot(111, aspect='equal')
 
         # Change limits
-        plt.xlim(-10.5, 6.5)
-        plt.ylim(-6, 10)
+        x_min = min(x_raw)
+        x_max = max(x_raw)
+        x_range = x_max - x_min
+        y_min = min(y_raw)
+        y_may = max(y_raw)
+        y_range = y_may - y_min
+        plt.xlim(x_min - 0.2 * x_range, x_max + 0.2 * x_range)
+        plt.ylim(y_min - 0.2 * y_range, y_may + 0.2 * y_range)
 
         # Set axis labels
         plt.xlabel('X [mm]')

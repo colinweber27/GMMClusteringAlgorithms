@@ -885,8 +885,14 @@ class BayesianGaussianMixture(GaussianMixtureBase):
         ax = plt.subplot(111, aspect='equal')
         axs = plt.gca()
 
-        plt.xlim(-14, 8)
-        plt.ylim(-7, 13)
+        x_min = min(data_array[:, 0])
+        x_max = max(data_array[:, 0])
+        x_range = x_max - x_min
+        y_min = min(data_array[:, 0])
+        y_may = max(data_array[:, 0])
+        y_range = y_may - y_min
+        plt.xlim(x_min - 0.2 * x_range, x_max + 0.2 * x_range)
+        plt.ylim(y_min - 0.2 * y_range, y_may + 0.2 * y_range)
 
         plt.title("BGM %s total counts: %i; total clusters: %i, "
                   "Cov=%s\n%s\nTOF cut=%s, Ion cut=%s, Rad cut=%s, "

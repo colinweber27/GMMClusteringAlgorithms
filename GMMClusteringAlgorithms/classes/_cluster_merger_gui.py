@@ -19,7 +19,7 @@ def css3_lists():
 
 class ClusterMergerGUI:
     """The GUI to assist with cluster merging."""
-    def __init__(self, master, color_list: list, shape: tuple, image, np_image):
+    def __init__(self, master, color_list, shape: tuple, image, np_image):
         self.master = master
         master.title("Cluster Merger GUI")
 
