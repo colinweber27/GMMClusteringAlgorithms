@@ -561,10 +561,10 @@ class DataFrame:
         x_max = max(x_raw)
         x_range = x_max - x_min
         y_min = min(y_raw)
-        y_may = max(y_raw)
-        y_range = y_may - y_min
+        y_max = max(y_raw)
+        y_range = y_max - y_min
         plt.xlim(x_min - 0.2 * x_range, x_max + 0.2 * x_range)
-        plt.ylim(y_min - 0.2 * y_range, y_may + 0.2 * y_range)
+        plt.ylim(y_min - 0.2 * y_range, y_max + 0.2 * y_range)
 
         # Set axis labels
         plt.xlabel('X [mm]')
