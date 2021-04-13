@@ -928,8 +928,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
             raw_data = data[:, n].reshape(-1, 1)
             data_range = max(raw_data) - min(raw_data)
             self._cluster_data_one_d(raw_data)
-            x_values_min = min(raw_data) - 0.1 * data_range
-            x_values_max = max(raw_data) + 0.1 * data_range
+            x_values_min = (min(raw_data) - 0.1 * data_range) if n != 3 else 0
+            x_values_max = (max(raw_data) + 0.1 * data_range) if n != 3 else 360
             x_values = np.linspace(x_values_min, x_values_max, 1000)
             pdf_values = np.array([0] * 1000).reshape(-1, 1)
             for i in range(0, self.n_comps_found_):

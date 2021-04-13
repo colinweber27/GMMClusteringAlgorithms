@@ -73,7 +73,7 @@ def _check_phases(phases, n_components):
     if (any(np.less(phases, -360.)) or
             any(np.greater(phases, 360.))):
         raise ValueError("The parameter 'phases' should be in the range "
-                         "[-360, 360], but got max value %.5f, min value %.5f"
+                         "[-360, 360], but got min value %.5f, max value %.5f"
                          % (np.min(phases), np.max(phases)))
 
     # check limits
