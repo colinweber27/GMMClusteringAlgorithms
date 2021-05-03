@@ -887,8 +887,8 @@ class BayesianGaussianMixture(GaussianMixtureBase):
         axs = plt.gca()
 
         rad_max = max(data_frame_object.data_array_[:, 2])
-        plt.xlim(ring_center - 0.2 * rad_max, ring_center + 0.2 * rad_max)
-        plt.ylim(ring_center - 0.2 * rad_max, ring_center + 0.2 * rad_max)
+        plt.xlim(ring_center[0] - 0.2 * rad_max, ring_center[0] + 0.2 * rad_max)
+        plt.ylim(ring_center[1] - 0.2 * rad_max, ring_center[1] + 0.2 * rad_max)
 
         plt.title("BGM %s total counts: %i; total clusters: %i, "
                   "Cov=%s\n%s\nTOF cut=%s, Ion cut=%s, Rad cut=%s, "
