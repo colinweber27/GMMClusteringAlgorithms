@@ -570,7 +570,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
         for i in self.unique_labels_:
             self.colors_.append(colors[i])
 
-    def recalculate_centers_uncertainties(self, data_frame_object: object):
+    def recalculate_centers_uncertainties(self, data_frame_object: object, indices=None):
         """Recalculate the centers of each cluster and the uncertainties in the centers.
 
         This uses a different method from simply extracting the centers
@@ -586,6 +586,9 @@ class GaussianMixtureModel(GaussianMixtureBase):
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
+
+        indices : list (optional)
+            A list of the indices corresponding to the cluster centers to recalculate.
         """
         if not self.clustered_:
             raise NotImplementedError("Must run a method to cluster the "
@@ -597,6 +600,10 @@ class GaussianMixtureModel(GaussianMixtureBase):
         cp = data_frame_object.data_array_
 
         cluster_ind = np.arange(0, self.n_comps_found_)  # array of cluster numbers
+        if indices is None:
+            inds_to_do = np.arange(0, self.n_comps_found_)  # array of cluster numbers
+        else:
+            inds_to_do = np.array(indices)
 
         c1s, c1s_err, c1_chi_sq, c1_red_chi_sq, c1_sigma_abs, \
             c1_sigma_err, c1_height_abs, c1_height_err, c1_fw_hm_abs, \
@@ -607,70 +614,27 @@ class GaussianMixtureModel(GaussianMixtureBase):
         cluster_err = []
 
         for i in cluster_ind:
-            plt.figure()
-            c1_cut = []
-            c2_cut = []
-            if self.coordinates == 'Cartesian':
-                for j in range(len(self.labels_)):
-                    if self.labels_[j] == self.unique_labels_[i]:
-                        c1_cut.append(cp[:, 0][j])
-                        c2_cut.append(cp[:, 1][j])
-            else:  # if self.coordinates == 'Polar'
-                for j in range(len(self.labels_)):
-                    if self.labels_[j] == self.unique_labels_[i]:
-                        c1_cut.append(cp[:, 2][j])
-                        c2_cut.append(cp[:, 3][j])
+            if i in inds_to_do:
+                plt.figure()
+                c1_cut = []
+                c2_cut = []
+                if self.coordinates == 'Cartesian':
+                    for j in range(len(self.labels_)):
+                        if self.labels_[j] == self.unique_labels_[i]:
+                            c1_cut.append(cp[:, 0][j])
+                            c2_cut.append(cp[:, 1][j])
+                else:  # if self.coordinates == 'Polar'
+                    for j in range(len(self.labels_)):
+                        if self.labels_[j] == self.unique_labels_[i]:
+                            c1_cut.append(cp[:, 2][j])
+                            c2_cut.append(cp[:, 3][j])
 
-            width_c1 = max(c1_cut) - min(c1_cut)
-            width_c2 = max(c2_cut) - min(c2_cut)
+                width_c1 = max(c1_cut) - min(c1_cut)
+                width_c2 = max(c2_cut) - min(c2_cut)
 
-            if len(c1_cut) == 1 or len(c2_cut) == 1:
-                c1s.append(c1_cut[0])
-                c1s_err.append(0)
-                c1_chi_sq.append(0)
-                c1_red_chi_sq.append(0)
-                c1_sigma_abs.append(0)
-                c1_sigma_err.append(0)
-                c1_height_abs.append(0)
-                c1_height_err.append(0)
-                c1_fw_hm_abs.append(0)
-                c1_fw_hm_err.append(0)
-
-                c2s.append(c2_cut[0])
-                c2s_err.append(0)
-                c2_chi_sq.append(0)
-                c2_red_chi_sq.append(0)
-                c2_sigma_abs.append(0)
-                c2_sigma_err.append(0)
-                c2_height_abs.append(0)
-                c2_height_err.append(0)
-                c2_fw_hm_abs.append(0)
-                c2_fw_hm_err.append(0)
-
-                cluster_err.append(0)
-
-            else:
-                c1_fit = gauss_model_2save(
-                    min(c1_cut) - 0.1 * width_c1,
-                    max(c1_cut) + 0.1 * width_c1, c1_cut,
-                    num_bins(c1_cut), 'cadetblue')
-                c2_fit = gauss_model_2save(
-                    min(c2_cut) - 0.1 * width_c2,
-                    max(c2_cut) + 0.1 * width_c2, c2_cut,
-                    num_bins(c2_cut), 'darkorange')
-
-                c1_fit_array = np.array(c1_fit)
-                c2_fit_array = np.array(c2_fit)
-                if np.isnan(c1_fit_array.astype(float)[1]) \
-                        or np.isnan(c2_fit_array.astype(float)[1]) \
-                        or 0.0001 >= c1_fit_array[1] or \
-                        0.0001 >= c2_fit_array[1]:
-
-                    c1, c1_err = wt_avg_unc_number(c1_cut, width_c1)
-                    c2, c2_err = wt_avg_unc_number(c2_cut, width_c2)
-
-                    c1s.append(c1)
-                    c1s_err.append(c1_err)
+                if len(c1_cut) == 1 or len(c2_cut) == 1:
+                    c1s.append(c1_cut[0])
+                    c1s_err.append(0)
                     c1_chi_sq.append(0)
                     c1_red_chi_sq.append(0)
                     c1_sigma_abs.append(0)
@@ -680,8 +644,8 @@ class GaussianMixtureModel(GaussianMixtureBase):
                     c1_fw_hm_abs.append(0)
                     c1_fw_hm_err.append(0)
 
-                    c2s.append(c2)
-                    c2s_err.append(c2_err)
+                    c2s.append(c2_cut[0])
+                    c2s_err.append(0)
                     c2_chi_sq.append(0)
                     c2_red_chi_sq.append(0)
                     c2_sigma_abs.append(0)
@@ -691,43 +655,98 @@ class GaussianMixtureModel(GaussianMixtureBase):
                     c2_fw_hm_abs.append(0)
                     c2_fw_hm_err.append(0)
 
-                    cluster_err.append(
-                        np.sqrt(c2_err ** 2 + c1_err ** 2))
+                    cluster_err.append(0)
 
                 else:
-                    c1s.append(c1_fit_array[0])
-                    c1s_err.append(c1_fit_array[1])
-                    c1_chi_sq.append(c1_fit_array[2])
-                    c1_red_chi_sq.append(c1_fit_array[3])
-                    c1_sigma_abs.append(c1_fit_array[4])
-                    c1_sigma_err.append(c1_fit_array[5])
-                    c1_height_abs.append(c1_fit_array[6])
-                    c1_height_err.append(c1_fit_array[7])
-                    c1_fw_hm_abs.append(c1_fit_array[8])
-                    c1_fw_hm_err.append(c1_fit_array[9])
+                    c1_fit = gauss_model_2save(
+                        min(c1_cut) - 0.1 * width_c1,
+                        max(c1_cut) + 0.1 * width_c1, c1_cut,
+                        num_bins(c1_cut), 'cadetblue')
+                    c2_fit = gauss_model_2save(
+                        min(c2_cut) - 0.1 * width_c2,
+                        max(c2_cut) + 0.1 * width_c2, c2_cut,
+                        num_bins(c2_cut), 'darkorange')
 
-                    c2s.append(c2_fit_array[0])
-                    c2s_err.append(c2_fit_array[1])
-                    c2_chi_sq.append(c2_fit_array[2])
-                    c2_red_chi_sq.append(c2_fit_array[3])
-                    c2_sigma_abs.append(c2_fit_array[4])
-                    c2_sigma_err.append(c2_fit_array[5])
-                    c2_height_abs.append(c2_fit_array[6])
-                    c2_height_err.append(c2_fit_array[7])
-                    c2_fw_hm_abs.append(c2_fit_array[8])
-                    c2_fw_hm_err.append(c2_fit_array[9])
+                    c1_fit_array = np.array(c1_fit)
+                    c2_fit_array = np.array(c2_fit)
+                    if np.isnan(c1_fit_array.astype(float)[1]) \
+                            or np.isnan(c2_fit_array.astype(float)[1]) \
+                            or 0.0001 >= c1_fit_array[1] or \
+                            0.0001 >= c2_fit_array[1]:
 
-                    cluster_err.append(
-                        np.sqrt(c1_fit_array[1] ** 2 +
-                                c2_fit_array[1] ** 2))
+                        c1, c1_err = wt_avg_unc_number(c1_cut, width_c1)
+                        c2, c2_err = wt_avg_unc_number(c2_cut, width_c2)
 
-            plt.title('GMM %i comps c1_bins (cadetblue) = %i ; c2_bins '
-                      '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
-                      'Cluster unc=%0.5f' % (
-                          self.n_comps_found_, num_bins(c1_cut),
-                          num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
-            plt.xlim(-10, 10)
-            plt.show()
+                        c1s.append(c1)
+                        c1s_err.append(c1_err)
+                        c1_chi_sq.append(0)
+                        c1_red_chi_sq.append(0)
+                        c1_sigma_abs.append(0)
+                        c1_sigma_err.append(0)
+                        c1_height_abs.append(0)
+                        c1_height_err.append(0)
+                        c1_fw_hm_abs.append(0)
+                        c1_fw_hm_err.append(0)
+
+                        c2s.append(c2)
+                        c2s_err.append(c2_err)
+                        c2_chi_sq.append(0)
+                        c2_red_chi_sq.append(0)
+                        c2_sigma_abs.append(0)
+                        c2_sigma_err.append(0)
+                        c2_height_abs.append(0)
+                        c2_height_err.append(0)
+                        c2_fw_hm_abs.append(0)
+                        c2_fw_hm_err.append(0)
+
+                        cluster_err.append(
+                            np.sqrt(c2_err ** 2 + c1_err ** 2))
+
+                    else:
+                        c1s.append(c1_fit_array[0])
+                        c1s_err.append(c1_fit_array[1])
+                        c1_chi_sq.append(c1_fit_array[2])
+                        c1_red_chi_sq.append(c1_fit_array[3])
+                        c1_sigma_abs.append(c1_fit_array[4])
+                        c1_sigma_err.append(c1_fit_array[5])
+                        c1_height_abs.append(c1_fit_array[6])
+                        c1_height_err.append(c1_fit_array[7])
+                        c1_fw_hm_abs.append(c1_fit_array[8])
+                        c1_fw_hm_err.append(c1_fit_array[9])
+
+                        c2s.append(c2_fit_array[0])
+                        c2s_err.append(c2_fit_array[1])
+                        c2_chi_sq.append(c2_fit_array[2])
+                        c2_red_chi_sq.append(c2_fit_array[3])
+                        c2_sigma_abs.append(c2_fit_array[4])
+                        c2_sigma_err.append(c2_fit_array[5])
+                        c2_height_abs.append(c2_fit_array[6])
+                        c2_height_err.append(c2_fit_array[7])
+                        c2_fw_hm_abs.append(c2_fit_array[8])
+                        c2_fw_hm_err.append(c2_fit_array[9])
+
+                        cluster_err.append(
+                            np.sqrt(c1_fit_array[1] ** 2 +
+                                    c2_fit_array[1] ** 2))
+
+                plt.title('GMM %i comps c1_bins (cadetblue) = %i ; c2_bins '
+                          '(orange) = %i\n(c1, c2) = (%0.2f,%0.2f),'
+                          'Cluster unc=%0.5f' % (
+                              self.n_comps_found_, num_bins(c1_cut),
+                              num_bins(c2_cut), c1s[i], c2s[i], cluster_err[i]))
+                plt.xlim(-10, 10)
+                plt.show()
+            else:
+                if self.coordinates == 'Cartesian':
+                    c1s.append(self.centers_array_[i, 0])
+                    c1s_err.append(self.centers_array_[i, 1])
+                    c2s.append(self.centers_array_[i, 2])
+                    c2s_err.append(self.centers_array_[i, 3])
+                else:  # if self.coordinates == 'Polar':
+                    c1s.append(self.centers_array_[i, 4])
+                    c1s_err.append(self.centers_array_[i, 5])
+                    c2s.append(self.centers_array_[i, 6])
+                    c2s_err.append(self.centers_array_[i, 7])
 
         self._calc_secondary_centers_unc(c1s, c1s_err, c2s, c2s_err,
                                          data_frame_object)

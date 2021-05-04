@@ -206,7 +206,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def recalculate_centers_uncertainties(self, data_frame_object: object):
+    def recalculate_centers_uncertainties(self, data_frame_object: object, indices=None):
         """Recalculate the centers of each cluster and the uncertainties in the centers.
 
         This uses a different method from simply extracting the centers
@@ -222,6 +222,9 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             The object that contains the processed data and
             information that is used by the algorithms to do the
             fits.
+
+        indices : list (optional)
+            A list of the indices corresponding to the cluster centers to recalculate.
         """
         pass
 
@@ -508,7 +511,8 @@ class GaussianMixtureBase(metaclass=ABCMeta):
 
                     if not brk:
                         ips_list = list(self.ips_)
-                        true_index_keep = ips_list.index(max(self.ips_[true_index_list]))
+                        max_ips = max(self.ips_[true_index_list])
+                        true_index_keep = ips_list.index(max_ips)
                         cluster_index_keep = cluster_index_list[true_index_list.index(true_index_keep)]
                         other_true_indices = [i for i in true_index_list if i != true_index_keep]
                         other_true_indices.sort(reverse=True)
@@ -516,6 +520,10 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                         other_cluster_indices.sort(reverse=True)
 
                         # Adjust fit results accordingly
+                        keeper_indices = list(range(self.n_comps_found_))
+                        for i in other_true_indices:
+                            keeper_indices.remove(i)
+                        self.centers_array_ = self.centers_array_[keeper_indices, :]
                         self.n_comps_found_ -= len(other_true_indices)
                         for i in other_true_indices:
                             self.colors_.remove(self.colors_[i])
@@ -529,8 +537,11 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                             ips.append(cluster_ions)
                         self.ips_ = np.array(ips).reshape(-1,)
 
-                        # Recalculate centers
-                        self.recalculate_centers_uncertainties(data_frame_object=data_frame_object)
+                        merged_cluster_true_index = [ips.index(max_ips)]
+
+                        # Recalculate centers, but only for the merged clusters
+                        self.recalculate_centers_uncertainties(data_frame_object=data_frame_object,
+                                                               indices=merged_cluster_true_index)
 
                         if self.n_comps_found_ == 1:
                             break

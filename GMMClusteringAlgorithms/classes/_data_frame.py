@@ -558,7 +558,6 @@ class DataFrame:
 
         # Change limits
         r_max = max(self.data_array_[:, 2])
-
         plt.xlim(self.center[0] - 1.2 * r_max, self.center[0] + 1.2 * r_max)
         plt.ylim(self.center[1] - 1.2 * r_max, self.center[1] + 1.2 * r_max)
 
