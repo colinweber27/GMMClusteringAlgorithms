@@ -1192,7 +1192,7 @@ class GaussianMixtureModel(GaussianMixtureBase):
 
         plt.grid()
 
-        save_string = 'GMM %s %s PDF, %s, %s, %s Clusters, ' \
+        save_string = 'GMM %s %s Results, %s, %s, %s Clusters, ' \
                       'timecut=%s,radcut=%s,tofcut=%s,' \
                       'ioncut=%s.jpeg' % (
                           self.ic, self.coordinates, data_frame_object.file[0:-4],

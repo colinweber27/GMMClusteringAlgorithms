@@ -912,7 +912,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
         plt.grid()
 
-        save_string = 'Phase First GMM %s PDF, %s, %s, %s ' \
+        save_string = 'Phase First GMM %s Results, %s, %s, %s ' \
                       'Clusters, timecut=%s,radcut=%s,tofcut=%s,' \
                       'ioncut=%s.jpeg' % (
                         self.ic, data_frame_object.file[0:-4], self.cov_type,

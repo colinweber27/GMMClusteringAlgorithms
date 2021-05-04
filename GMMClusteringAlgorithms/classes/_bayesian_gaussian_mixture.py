@@ -971,7 +971,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
 
         plt.grid()
 
-        save_string = 'BGM %s PDF, %s, %s, %s Clusters, ' \
+        save_string = 'BGM %s Results, %s, %s, %s Clusters, ' \
                       'timecut=%s,radcut=%s,tofcut=%s,' \
                       'ioncut=%s.jpeg' % (
                           self.coordinates, data_frame_object.file[0:-4],
