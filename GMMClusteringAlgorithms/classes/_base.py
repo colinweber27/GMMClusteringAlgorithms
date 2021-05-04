@@ -537,7 +537,10 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                             ips.append(cluster_ions)
                         self.ips_ = np.array(ips).reshape(-1,)
 
-                        merged_cluster_true_index = [ips.index(max_ips)]
+                        merged_cluster_true_index = \
+                            true_index_keep - \
+                            sum([1 if other_true_indices[x] < true_index_keep
+                                 else 0 for x in range(len(other_true_indices))])
 
                         # Recalculate centers, but only for the merged clusters
                         self.recalculate_centers_uncertainties(data_frame_object=data_frame_object,
