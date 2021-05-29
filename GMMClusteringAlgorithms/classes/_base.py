@@ -394,7 +394,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
         """
         pass
 
-    def _set_GUI(self, data_frame_object: object):
+    def _set_gui(self, data_frame_object: object):
         """Set up the GUI to be used in the cluster merger method.
 
         Parameters
@@ -469,7 +469,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             raise NotImplementedError("Must run a method to cluster the "
                                       "data before visualization.")
 
-        fig, canvas, np_image, PIL_image, color_list = self._set_GUI(data_frame_object=data_frame_object)
+        fig, canvas, np_image, PIL_image, color_list = self._set_gui(data_frame_object=data_frame_object)
 
         done = False
 
@@ -489,7 +489,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                 root.mainloop()  # Run GUI
 
                 brk = False
-                if len(color_list) > 1:
+                if len(tuple(color_list)) > 1:
                     colors = ['blue', 'salmon', 'green', 'cadetblue', 'yellow',
                               'cyan', 'indianred', 'chartreuse', 'seagreen',
                               'darkorange', 'purple', 'aliceblue', 'olivedrab',
@@ -553,7 +553,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
                         print("Please select at least 2 clusters. If there are no more merges you want "
                               "to perform, enter 'n' when prompted.")
 
-                fig, canvas, np_image, PIL_image, color_list = self._set_GUI(
+                fig, canvas, np_image, PIL_image, color_list = self._set_gui(
                     data_frame_object=data_frame_object)
 
             elif merge == 'n':
@@ -561,7 +561,7 @@ class GaussianMixtureBase(metaclass=ABCMeta):
             else:
                 print("Invalid response. Please enter either 'y' or 'n'.")
 
-                fig, canvas, np_image, PIL_image, color_list = self._set_GUI(
+                fig, canvas, np_image, PIL_image, color_list = self._set_gui(
                     data_frame_object=data_frame_object)
 
         fig, save_string = self.get_results_fig(data_frame_object=data_frame_object)

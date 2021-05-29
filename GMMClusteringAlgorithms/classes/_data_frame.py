@@ -418,6 +418,8 @@ class DataFrame:
                 'X', 'Y', 'Tof', 'TStamp', 'Radius',
                 'Phase', 'X1', 'X2', 'Y1', 'Y2',
                 'SumX', 'SumY', 'DiffXY', 'MCP', 'trig'])
+        data_df_prel.loc[:, 'trig'] = data_df_prel['trig'].round(decimals=2)
+        
         '''This dataframe has every data point from every event 
         which triggered all 5 TDC channels.'''
 
@@ -428,12 +430,10 @@ class DataFrame:
 
         # If an event is too far away from the circle, or
         # there were too many ions, or it took too long
-        # to get to the PS-MCP from the CPT, it's also cut from the
+        # to get to the PS-MCP from the trap, it's also cut from the
         # data set.
         data_df_prel = data_df_prel.query('45<SumX<48')
         data_df_prel = data_df_prel.query('44<SumY<47')
-
-        data_df_prel['trig'] = data_df_prel.trig.round(decimals=2)
 
         data_df_prel = data_df_prel.reset_index().set_index("trig")
         data_df_prel["Ions_that_shot"] = \
@@ -478,7 +478,7 @@ class DataFrame:
 
         return lmf_start_time_int, lmf_stop_time_int
 
-    def return_processed_data_Excel(self):
+    def return_processed_data_excel(self):
         """Return the processed data as an Excel file.
 
         The returned writer may be saved separately with the

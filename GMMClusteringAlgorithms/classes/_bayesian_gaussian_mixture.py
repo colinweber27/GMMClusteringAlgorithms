@@ -168,7 +168,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
                              "either 'Cartesian' or 'Polar', but"
                              "got %s instead." % self.coordinates)
 
-    def _BGM_fit(self, x):
+    def _bgm_fit(self, x):
         """Fit a Bayesian Gaussian Mixture to the data given by x.
 
         Parameters
@@ -191,7 +191,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
 
         return model
 
-    def _strict_BGM_fit(self, x):
+    def _strict_bgm_fit(self, x):
         """Fit a Strict Bayesian Gaussian Mixture to the data given by x.
 
         A Strict Bayesian Gaussian Mixture is a Bayesian Gaussian Mixture
@@ -262,34 +262,20 @@ class BayesianGaussianMixture(GaussianMixtureBase):
             # Calculate the radii and phases of cluster centers, with standard errors
             rs = np.sqrt(np.square(np.subtract(c1s, xC)) +
                          np.square(np.subtract(c2s, yC)))
-            rs_err = np.sqrt(np.add(np.add(np.multiply(np.square(np.divide(
-                np.subtract(c1s, xC), rs)), np.square(c1s_err)), np.multiply(
-                np.square(np.divide(np.subtract(c1s, xC), rs)), np.square(xC_unc))), np.add(
-                np.multiply(np.square(np.divide(np.subtract(c2s, yC), rs)),
-                            np.square(c2s_err)), np.multiply(
-                    np.square(np.divide(np.subtract(c2s, yC), rs)), np.square(yC_unc)))))
+            rs_err = (1 / rs) * np.sqrt((c1s_err * (c1s - xC)) ** 2 +
+                                        (xC_unc * (c1s - xC)) ** 2 +
+                                        (c2s_err * (c2s - yC)) ** 2 +
+                                        (yC_unc * (c2s - yC)) ** 2)
             ps = np.rad2deg(np.arctan(np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))
             for i in range(len(c1s)):
                 if c1s[i] - xC < 0:
                     ps[i] += 180
                 if c1s[i] - xC > 0 > c2s[i] - yC:
                     ps[i] += 360
-            ps_err = np.rad2deg(np.sqrt(np.add(np.add(np.square(np.multiply(np.multiply(
-                np.divide(1, np.add(1, np.square(np.divide(np.subtract(c2s, yC),
-                                                           np.subtract(c1s, xC))))),
-                np.divide(np.subtract(yC, c2s), np.square(np.subtract(c1s, xC)))),
-                c1s_err)), np.square(np.multiply(np.multiply(np.divide(1, np.add(
-                    1, np.square(np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))),
-                                                             np.divide(np.subtract(
-                                                                 yC, c2s), np.square(
-                                                                 np.subtract(c1s, xC)))), xC_unc))), np.add(
-                np.square(np.multiply(np.multiply(np.divide(1, np.add(1, np.square(
-                    np.divide(np.subtract(c2s, yC), np.subtract(c1s, xC))))),
-                                                  np.divide(1, np.subtract(c1s, xC))),
-                                      c2s_err)), np.square(np.multiply(np.multiply(
-                                        np.divide(1, np.add(1, np.square(np.divide(np.subtract(c2s, yC),
-                                                            np.subtract(c1s, xC))))),
-                                        np.divide(1, np.subtract(c1s, xC))), yC_unc))))))
+            ps_err = np.rad2deg((1 / rs ** 2) * np.sqrt((c2s_err * (c1s - xC)) ** 2 +
+                                                        (yC_unc * (c1s - xC)) ** 2 +
+                                                        (c1s_err * (c2s - yC)) ** 2 +
+                                                        (xC_unc * (c2s - yC)) ** 2))
 
             cluster_err = np.sqrt(np.add(np.square(c1s_err),
                                          np.square(c2s_err)))
@@ -322,16 +308,14 @@ class BayesianGaussianMixture(GaussianMixtureBase):
             phases = np.deg2rad(c2s)
             phases_err = np.deg2rad(c2s_err)
 
-            xs = np.add(np.multiply(c1s, np.cos(phases)), xC)
-            xs_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.cos(
-                phases), c1s_err)), np.square(np.multiply(
-                    np.multiply(c1s, np.sin(phases)), phases_err))),
-                xC_unc ** 2))
-            ys = np.add(np.multiply(c1s, np.sin(phases)), yC)
-            ys_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.sin(
-                phases), c1s_err)), np.square(np.multiply(
-                    np.multiply(c1s, np.cos(phases)), phases_err))),
-                yC_unc ** 2))
+            xs = (c1s * np.cos(phases)) + xC
+            xs_err = np.sqrt((c1s_err * np.cos(phases)) ** 2 +
+                             (phases_err * c1s * np.sin(phases)) ** 2 +
+                             xC_unc ** 2)
+            ys = (c1s * np.sin(phases)) + yC
+            ys_err = np.sqrt((c1s_err * np.sin(phases)) ** 2 +
+                             (phases_err * c1s * np.cos(phases)) ** 2 +
+                             yC_unc ** 2)
             cluster_err = np.sqrt(np.add(np.square(xs_err),
                                          np.square(ys_err)))
 
@@ -506,10 +490,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
 
                     c1_fit_array = np.array(c1_fit)
                     c2_fit_array = np.array(c2_fit)
-                    if np.isnan(c1_fit_array.astype(float)[1]) \
-                            or np.isnan(c2_fit_array.astype(float)[1]) \
-                            or 0.0001 >= c1_fit_array[1] or \
-                            0.0001 >= c2_fit_array[1]:
+                    if c1_fit[1] >= 5 or c2_fit[1] >= 5:
 
                         c1, c1_err = wt_avg_unc_number(c1_cut, width_c1)
                         c2, c2_err = wt_avg_unc_number(c2_cut, width_c2)
@@ -600,7 +581,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
         x : array-like, shape (n_samples, n_attributes)
             The data to be clustered.
         """
-        model = self._BGM_fit(x)
+        model = self._bgm_fit(x)
 
         # Assign attributes
         self.means_ = model.means_
@@ -636,7 +617,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
             data = data_frame_object.data_array_[
                    :, (2, 3)]
 
-        model = self._BGM_fit(data)  # Fit model to data
+        model = self._bgm_fit(data)  # Fit model to data
 
         # Assign attributes
         self.labels_ = model.predict(data)
@@ -675,7 +656,7 @@ class BayesianGaussianMixture(GaussianMixtureBase):
             data = data_frame_object.data_array_[
                    :, (2, 3)]
 
-        model = self._strict_BGM_fit(data)
+        model = self._strict_bgm_fit(data)
 
         # Assign attributes
         self.means_ = model.means_

@@ -155,7 +155,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
                              "'AIC', 'BIC', or 'None', but got %s "
                              "instead." % self.ic)
 
-    def _GMM_fit(self, x, n_components):
+    def _gmm_fit(self, x, n_components):
         """Fit a Gaussian Mixture Model to the data given by x.
 
         Parameters
@@ -230,16 +230,14 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         phases = np.deg2rad(c2s)
         phases_err = np.deg2rad(c2s_err)
 
-        xs = np.add(np.multiply(c1s, np.cos(phases)), xC)
-        xs_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.cos(
-            phases), c1s_err)), np.square(np.multiply(
-                np.multiply(c1s, np.sin(phases)), phases_err))),
-            xC_unc ** 2))
-        ys = np.add(np.multiply(c1s, np.sin(phases)), yC)
-        ys_err = np.sqrt(np.add(np.add(np.square(np.multiply(np.sin(
-            phases), c1s_err)), np.square(np.multiply(
-                np.multiply(c1s, np.cos(phases)), phases_err))),
-            yC_unc ** 2))
+        xs = (c1s * np.cos(phases)) + xC
+        xs_err = np.sqrt((c1s_err * np.cos(phases)) ** 2 +
+                         (phases_err * c1s * np.sin(phases)) ** 2 +
+                         xC_unc ** 2)
+        ys = (c1s * np.sin(phases)) + yC
+        ys_err = np.sqrt((c1s_err * np.sin(phases)) ** 2 +
+                         (phases_err * c1s * np.cos(phases)) ** 2 +
+                         yC_unc ** 2)
         cluster_err = np.sqrt(np.add(np.square(xs_err),
                                      np.square(ys_err)))
 
@@ -415,10 +413,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
 
                     c1_fit_array = np.array(c1_fit)
                     c2_fit_array = np.array(c2_fit)
-                    if np.isnan(c1_fit_array.astype(float)[1]) \
-                            or np.isnan(c2_fit_array.astype(float)[1]) \
-                            or 0.0001 >= c1_fit_array[1] or \
-                            0.0001 >= c2_fit_array[1]:
+                    if c1_fit[1] >= 5 or c2_fit[1] >= 5:
 
                         c1, c1_err = wt_avg_unc_number(c1_cut, width_c1)
                         c2, c2_err = wt_avg_unc_number(c2_cut, width_c2)
@@ -510,7 +505,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         ic_list = []
 
         if __name__ == 'GMMClusteringAlgorithms.classes._phase_first_gaussian_model':
-            func = partial(self._GMM_fit, x)  # Initialize function to be processed
+            func = partial(self._gmm_fit, x)  # Initialize function to be processed
             results = Parallel(n_jobs=n_cores)(delayed(func)(i)  # Process results
                                                for i in inputs)
 
@@ -618,7 +613,7 @@ class PhaseFirstGaussianModel(GaussianMixtureBase):
         phase_data = data_frame_object.data_array_[:, 3].reshape(-1, 1)
         polar_data = data_frame_object.data_array_[:, (2, 3)]
 
-        model = self._GMM_fit(
+        model = self._gmm_fit(
             phase_data, n_components=self.n_components)
 
         # Assign input variables for 2D fit
